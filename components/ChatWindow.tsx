@@ -50,7 +50,6 @@ export function ChatWindow(props: {
   const [sourcesForMessages, setSourcesForMessages] = useState<
     Record<string, any>
   >({});
-
   const {
     messages,
     input,

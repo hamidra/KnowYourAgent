@@ -21,7 +21,7 @@ export function IntermediateStep(props: { message: Message }) {
         <span className={expanded ? "" : "hidden"}>🔼</span>
       </div>
       <div
-        className={`overflow-hidden max-h-[0px] transition-[max-height] ease-in-out ${
+        className={`overflow-scroll max-h-[0px] transition-[max-height] ease-in-out ${
           expanded ? "max-h-[360px]" : ""
         }`}
       >

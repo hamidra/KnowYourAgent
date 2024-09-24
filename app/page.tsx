@@ -25,7 +25,7 @@ export default function AgentsPage() {
     <ChatWindow
       endpoint="api/chat/agents"
       emptyStateComponent={InfoCard}
-      placeholder="Hi! Ask me about myself, my identity, how much money I have!"
+      placeholder="Hi! Ask me about myself, my identity, how much money I have! Ask me about anything!"
       titleText="Know Your Agent."
       emoji="🤖"
       showIntermediateStepsToggle={true}
