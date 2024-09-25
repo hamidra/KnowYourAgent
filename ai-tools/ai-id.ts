@@ -14,11 +14,21 @@ export const authTool = tool(
         "authorization",
         `Basic ${Buffer.from(`${IDP_USER}:${IDP_PASS}`).toString("base64")}`,
       );
-      const identity = await fetch(`${endpoint}?did=${did}`, {
+      const response = await fetch(`${endpoint}?did=${did}`, {
         headers,
       });
-      return identity.json();
+
+      // Check if HTTP status is OK
+      if (!response.ok) {
+        const errorMessage = `Error: HTTP status ${response.status} ${response.statusText}`;
+        throw new Error(errorMessage);
+      }
+
+      // Parse the result
+      const result = await response.json();
+      return result;
     } catch (err) {
+      console.error(err);
       return {
         message:
           "An error happened. let the user know you can not retrieve the identity",
