@@ -12,12 +12,12 @@ export default function AgentsPage() {
         for online payments in case they need a payment for a task.
         <br />
         <br />
-        Try to ask it about it's identity or their account balance. e.g. ask
-        them.
+        Try to ask it about it&apos;s identity or their account balance. e.g.
+        ask them.
         <br />
-        > Who you are?! Provide me a proof of your Identity?
-        <br/>
-        > What is your current balance?!
+        &gt; Who you are?! Provide me a proof of your Identity?
+        <br />
+        &gt; What is your current balance?!
       </p>
     </div>
   );
