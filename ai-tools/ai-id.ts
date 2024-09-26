@@ -15,9 +15,12 @@ export const authTool = tool(
           "base64",
         )}`,
       };
-      const response = await fetch(getDIDUrl, { headers });
+      const request = new Request(getDIDUrl, { headers });
+      console.log(request);
+      const response = await fetch(request);
       console.log(headers);
       console.info(response.headers);
+      console.info();
       // Check if HTTP status is OK
       if (!response.ok) {
         const errorMessage = `Error: HTTP status ${response.status} ${response.statusText}`;
