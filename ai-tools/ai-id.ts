@@ -8,17 +8,15 @@ export const authTool = tool(
   async () => {
     try {
       // Add basic Auth
-      const headers = new Headers();
-      headers.append(
-        "authorization",
-        `Basic ${Buffer.from(`${IDP_USER}:${IDP_PASS}`).toString("base64")}`,
-      );
-      console.info(headers);
       const getDIDUrl = `${endpoint}?did=${did}`;
       console.info(getDIDUrl);
-      const response = await fetch(getDIDUrl, {
-        headers,
-      });
+      const headers = {
+        authorization: `Basic ${Buffer.from(`${IDP_USER}:${IDP_PASS}`).toString(
+          "base64",
+        )}`,
+      };
+      const response = await fetch(getDIDUrl, { headers });
+      console.log(headers);
       console.info(response.headers);
       // Check if HTTP status is OK
       if (!response.ok) {
