@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@langchain/community':
         specifier: ^0.3.0
-        version: 0.3.0(@langchain/core@0.3.1(openai@4.63.0(zod@3.22.3)))(ignore@5.3.2)(lodash@4.17.21)(openai@4.63.0(zod@3.22.3))
+        version: 0.3.0(@langchain/core@0.3.1(openai@4.63.0(zod@3.22.3)))(axios@1.7.7)(ignore@5.3.2)(lodash@4.17.21)(openai@4.63.0(zod@3.22.3))
       '@langchain/core':
         specifier: ^0.3.1
         version: 0.3.1(openai@4.63.0(zod@3.22.3))
@@ -38,6 +38,9 @@ importers:
       autoprefixer:
         specifier: 10.4.14
         version: 10.4.14(postcss@8.4.27)
+      axios:
+        specifier: ^1.7.7
+        version: 1.7.7
       eslint:
         specifier: 8.46.0
         version: 8.46.0
@@ -46,7 +49,7 @@ importers:
         version: 13.4.12(eslint@8.46.0)(typescript@5.1.6)
       langchain:
         specifier: ^0.3.2
-        version: 0.3.2(@langchain/core@0.3.1(openai@4.63.0(zod@3.22.3)))(openai@4.63.0(zod@3.22.3))
+        version: 0.3.2(@langchain/core@0.3.1(openai@4.63.0(zod@3.22.3)))(axios@1.7.7)(openai@4.63.0(zod@3.22.3))
       next:
         specifier: ^14.2.3
         version: 14.2.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -946,6 +949,9 @@ packages:
     resolution: {integrity: sha512-Mr2ZakwQ7XUAjp7pAwQWRhhK8mQQ6JAaNWSjmjxil0R8BPioMtQsTLOolGYkji1rcL++3dCqZA3zWqpT+9Ew6g==}
     engines: {node: '>=4'}
 
+  axios@1.7.7:
+    resolution: {integrity: sha512-S4kL7XrjgBmvdGut0sN3yJxqYzrDOnivkBiN0OFs6hLiUam3UPvswUo0kqGyhqUZGEOytHyumEdXsAkgCOUf3Q==}
+
   axobject-query@4.1.0:
     resolution: {integrity: sha512-qIj0G9wZbMGNLjLmg1PT6v2mE9AH2zlnADJD/2tC6E00hgmhUOfEB6greHPAfLRSufHqROIUTkw6E+M3lH0PTQ==}
     engines: {node: '>= 0.4'}
@@ -1416,6 +1422,15 @@ packages:
 
   flatted@3.3.1:
     resolution: {integrity: sha512-X8cqMLLie7KsNUDSdzeN8FYK9rEt4Dt67OsG/DNGnYTSDBG4uFAJFBnUeiV+zCVAvwFy56IjM9sH51jVaEhNxw==}
+
+  follow-redirects@1.15.9:
+    resolution: {integrity: sha512-gew4GsXizNgdoRyqmyfMHyAmXsZDk6mHkSxZFCzW9gwlbtOW44CDtYavM+y+72qD/Vq2l550kMF52DT8fOLJqQ==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
 
   for-each@0.3.3:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}
@@ -2348,6 +2363,9 @@ packages:
   property-information@6.5.0:
     resolution: {integrity: sha512-PgTgs/BlvHxOu8QuEN7wi5A0OmXaBcHpmCSTehcs6Uuu9IkDIEo13Hy7n898RHfrQ49vKCoGeWZSaAK01nwVig==}
 
+  proxy-from-env@1.1.0:
+    resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
+
   punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
@@ -2986,7 +3004,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
 
-  '@langchain/community@0.3.0(@langchain/core@0.3.1(openai@4.63.0(zod@3.22.3)))(ignore@5.3.2)(lodash@4.17.21)(openai@4.63.0(zod@3.22.3))':
+  '@langchain/community@0.3.0(@langchain/core@0.3.1(openai@4.63.0(zod@3.22.3)))(axios@1.7.7)(ignore@5.3.2)(lodash@4.17.21)(openai@4.63.0(zod@3.22.3))':
     dependencies:
       '@langchain/core': 0.3.1(openai@4.63.0(zod@3.22.3))
       '@langchain/openai': 0.3.0(@langchain/core@0.3.1(openai@4.63.0(zod@3.22.3)))
@@ -2994,7 +3012,7 @@ snapshots:
       expr-eval: 2.0.2
       flat: 5.0.2
       js-yaml: 4.1.0
-      langchain: 0.3.2(@langchain/core@0.3.1(openai@4.63.0(zod@3.22.3)))(openai@4.63.0(zod@3.22.3))
+      langchain: 0.3.2(@langchain/core@0.3.1(openai@4.63.0(zod@3.22.3)))(axios@1.7.7)(openai@4.63.0(zod@3.22.3))
       langsmith: 0.1.59(openai@4.63.0(zod@3.22.3))
       uuid: 10.0.0
       zod: 3.22.3
@@ -3447,6 +3465,14 @@ snapshots:
 
   axe-core@4.10.0: {}
 
+  axios@1.7.7:
+    dependencies:
+      follow-redirects: 1.15.9
+      form-data: 4.0.0
+      proxy-from-env: 1.1.0
+    transitivePeerDependencies:
+      - debug
+
   axobject-query@4.1.0: {}
 
   bail@2.0.2: {}
@@ -3807,7 +3833,7 @@ snapshots:
       eslint: 8.46.0
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.6.3(@typescript-eslint/parser@5.62.0(eslint@8.46.0)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.30.0(eslint@8.46.0))(eslint@8.46.0)
-      eslint-plugin-import: 2.30.0(@typescript-eslint/parser@5.62.0(eslint@8.46.0)(typescript@5.1.6))(eslint-import-resolver-typescript@3.6.3)(eslint@8.46.0)
+      eslint-plugin-import: 2.30.0(@typescript-eslint/parser@5.62.0(eslint@8.46.0)(typescript@5.1.6))(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@5.62.0(eslint@8.46.0)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.30.0(eslint@8.46.0))(eslint@8.46.0))(eslint@8.46.0)
       eslint-plugin-jsx-a11y: 6.10.0(eslint@8.46.0)
       eslint-plugin-react: 7.36.1(eslint@8.46.0)
       eslint-plugin-react-hooks: 5.0.0-canary-7118f5dd7-20230705(eslint@8.46.0)
@@ -3838,7 +3864,7 @@ snapshots:
       is-bun-module: 1.2.1
       is-glob: 4.0.3
     optionalDependencies:
-      eslint-plugin-import: 2.30.0(@typescript-eslint/parser@5.62.0(eslint@8.46.0)(typescript@5.1.6))(eslint-import-resolver-typescript@3.6.3)(eslint@8.46.0)
+      eslint-plugin-import: 2.30.0(@typescript-eslint/parser@5.62.0(eslint@8.46.0)(typescript@5.1.6))(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@5.62.0(eslint@8.46.0)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.30.0(eslint@8.46.0))(eslint@8.46.0))(eslint@8.46.0)
     transitivePeerDependencies:
       - '@typescript-eslint/parser'
       - eslint-import-resolver-node
@@ -3856,7 +3882,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.30.0(@typescript-eslint/parser@5.62.0(eslint@8.46.0)(typescript@5.1.6))(eslint-import-resolver-typescript@3.6.3)(eslint@8.46.0):
+  eslint-plugin-import@2.30.0(@typescript-eslint/parser@5.62.0(eslint@8.46.0)(typescript@5.1.6))(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@5.62.0(eslint@8.46.0)(typescript@5.1.6))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.30.0(eslint@8.46.0))(eslint@8.46.0))(eslint@8.46.0):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.8
@@ -4055,6 +4081,8 @@ snapshots:
   flat@5.0.2: {}
 
   flatted@3.3.1: {}
+
+  follow-redirects@1.15.9: {}
 
   for-each@0.3.3:
     dependencies:
@@ -4498,7 +4526,7 @@ snapshots:
     dependencies:
       json-buffer: 3.0.1
 
-  langchain@0.3.2(@langchain/core@0.3.1(openai@4.63.0(zod@3.22.3)))(openai@4.63.0(zod@3.22.3)):
+  langchain@0.3.2(@langchain/core@0.3.1(openai@4.63.0(zod@3.22.3)))(axios@1.7.7)(openai@4.63.0(zod@3.22.3)):
     dependencies:
       '@langchain/core': 0.3.1(openai@4.63.0(zod@3.22.3))
       '@langchain/openai': 0.3.0(@langchain/core@0.3.1(openai@4.63.0(zod@3.22.3)))
@@ -4513,6 +4541,8 @@ snapshots:
       yaml: 2.5.1
       zod: 3.23.8
       zod-to-json-schema: 3.23.3(zod@3.23.8)
+    optionalDependencies:
+      axios: 1.7.7
     transitivePeerDependencies:
       - encoding
       - openai
@@ -5243,6 +5273,8 @@ snapshots:
       react-is: 16.13.1
 
   property-information@6.5.0: {}
+
+  proxy-from-env@1.1.0: {}
 
   punycode@2.3.1: {}
 

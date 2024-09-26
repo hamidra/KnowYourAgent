@@ -1,5 +1,6 @@
 import { tool } from "@langchain/core/tools";
 import { authSchema } from "@/ai-tools/schema";
+import axios from "axios";
 
 const { IDP_USER, IDP_PASS, DID, IDP_URL } = process.env;
 const endpoint = IDP_URL;
@@ -15,20 +16,18 @@ export const authTool = tool(
           "base64",
         )}`,
       };
-      const request = new Request(getDIDUrl, { headers });
-      console.log(request);
-      const response = await fetch(request);
+      const response = await axios.get(getDIDUrl, { headers });
       console.log(headers);
       console.info(response.headers);
-      console.info();
       // Check if HTTP status is OK
-      if (!response.ok) {
-        const errorMessage = `Error: HTTP status ${response.status} ${response.statusText}`;
+      if (response.status >= 400) {
+        const errorMessage = `Error: HTTP status ${response.status}`;
         throw new Error(errorMessage);
       }
 
       // Parse the result
-      const result = await response.json();
+      const result = await response.data;
+      console.info(result);
       return result;
     } catch (err) {
       console.error(err);
