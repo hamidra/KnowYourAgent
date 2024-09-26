@@ -18,6 +18,7 @@ export const authTool = tool(
       const response = await fetch(getDIDUrl, {
         headers,
       });
+      console.info(headers);
       console.info(response.headers);
       // Check if HTTP status is OK
       if (!response.ok) {
