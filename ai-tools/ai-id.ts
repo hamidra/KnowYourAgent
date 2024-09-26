@@ -14,7 +14,9 @@ export const authTool = tool(
         "authorization",
         `Basic ${Buffer.from(`${IDP_USER}:${IDP_PASS}`).toString("base64")}`,
       );
-      const response = await fetch(`${endpoint}?did=${did}`, {
+      const getDIDUrl = `${endpoint}?did=${did}`;
+      console.info(getDIDUrl);
+      const response = await fetch(getDIDUrl, {
         headers,
       });
 
