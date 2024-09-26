@@ -3,7 +3,7 @@ import { authSchema } from "@/ai-tools/schema";
 
 const { IDP_USER, IDP_PASS, DID, IDP_URL } = process.env;
 const endpoint = IDP_URL;
-const did = DID;
+const did = encodeURIComponent(DID);
 
 export const authTool = tool(
   async () => {
