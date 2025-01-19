@@ -2,11 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { Message as VercelChatMessage, StreamingTextResponse } from "ai";
 
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
-import { MemorySaver } from "@langchain/langgraph";
 import { ChatOpenAI } from "@langchain/openai";
 import { didTool } from "@/ai-tools/ai-id";
 import { walletTool } from "@/ai-tools/ai-wallet";
-import { emailTool } from "@/ai-tools/email";
+import { emailTool } from "@/ai-tools/gmail";
 import {
   AIMessage,
   BaseMessage,
