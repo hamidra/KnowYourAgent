@@ -4,7 +4,7 @@ import type { Message } from "ai/react";
 export function IntermediateStep(props: { message: Message }) {
   const parsedInput = JSON.parse(props.message.content);
   const action = parsedInput.action;
-  const observation = parsedInput.observation;
+  const observation = JSON.stringify(parsedInput.observation);
   const [expanded, setExpanded] = useState(false);
   return (
     <div

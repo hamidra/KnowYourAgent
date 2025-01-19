@@ -5,11 +5,31 @@ import "react-toastify/dist/ReactToastify.css";
 
 import { Message } from "ai";
 import { useChat } from "ai/react";
-import { useRef, useState, ReactElement } from "react";
+import { useRef, useState, ReactElement, useEffect } from "react";
 import type { FormEvent } from "react";
 
 import { ChatMessageBubble } from "@/components/ChatMessageBubble";
 import { IntermediateStep } from "./IntermediateStep";
+
+function parseAuthorizationEndpoint(message: Message) {
+  if (message?.role !== "system") return;
+  const content = JSON.parse(message.content);
+  return content.observation?.authorizationEndpoint;
+}
+
+function transformWithAuthorization(messages: Message[]) {
+  const lastMessage = messages[messages.length - 1];
+  const secondLastMessage = messages[messages.length - 2];
+  const authorizationEndpoint = parseAuthorizationEndpoint(secondLastMessage);
+  if (authorizationEndpoint) {
+    // if the second last message is a system message with an authorization endpoint, remove the last assistant message
+    return { messages: messages.slice(0, -1), authorizationEndpoint };
+  } else {
+    // otherwise try to extract the authorizationMessage from the last message if it is authorizationMessage
+    const authorizationEndpoint = parseAuthorizationEndpoint(lastMessage);
+    return { messages, authorizationEndpoint };
+  }
+}
 
 export function ChatWindow(props: {
   endpoint: string;
@@ -25,7 +45,7 @@ export function ChatWindow(props: {
     endpoint,
     emptyStateComponent,
     placeholder,
-    titleText = "An LLM",
+    titleText = "Tesser LLM",
     showIntermediateStepsToggle,
     emoji,
   } = props;
@@ -33,6 +53,9 @@ export function ChatWindow(props: {
   const [showIntermediateSteps, setShowIntermediateSteps] = useState(false);
   const [intermediateStepsLoading, setIntermediateStepsLoading] =
     useState(false);
+  const [authorizationEndpoint, setAuthorizationEndpoint] = useState<
+    any | null
+  >(null);
 
   const intemediateStepsToggle = showIntermediateStepsToggle && (
     <div>
@@ -92,80 +115,84 @@ export function ChatWindow(props: {
     if (chatEndpointIsLoading ?? intermediateStepsLoading) {
       return;
     }
-    if (!showIntermediateSteps) {
-      handleSubmit(e);
-      // Some extra work to show intermediate steps properly
-    } else {
-      setIntermediateStepsLoading(true);
-      setInput("");
-      const messagesWithUserReply = messages.concat({
-        id: messages.length.toString(),
-        content: input,
-        role: "user",
-      });
-      setMessages(messagesWithUserReply);
-      const response = await fetch(endpoint, {
-        method: "POST",
-        body: JSON.stringify({
-          messages: messagesWithUserReply,
-          show_intermediate_steps: true,
-        }),
-      });
-      const json = await response.json();
-      setIntermediateStepsLoading(false);
-      if (response.status === 200) {
-        const responseMessages: Message[] = json.messages;
-        // Represent intermediate steps as system messages for display purposes
-        // TODO: Add proper support for tool messages
-        const toolCallMessages = responseMessages.filter(
-          (responseMessage: Message) => {
-            return (
-              (responseMessage.role === "assistant" &&
-                !!responseMessage.tool_calls?.length) ||
-              responseMessage.role === "tool"
-            );
-          },
-        );
-        const intermediateStepMessages = [];
-        for (let i = 0; i < toolCallMessages.length; i += 2) {
-          const aiMessage = toolCallMessages[i];
-          const toolMessage = toolCallMessages[i + 1];
-          intermediateStepMessages.push({
-            id: (messagesWithUserReply.length + i / 2).toString(),
-            role: "system" as const,
-            content: JSON.stringify({
-              action: aiMessage.tool_calls?.[0],
-              observation: toolMessage.content,
-            }),
-          });
-        }
-        const newMessages = messagesWithUserReply;
-        for (const message of intermediateStepMessages) {
-          newMessages.push(message);
-          setMessages([...newMessages]);
-          await new Promise((resolve) =>
-            setTimeout(resolve, 1000 + Math.random() * 1000),
+
+    setIntermediateStepsLoading(true);
+    setInput("");
+    const messagesWithUserReply = messages.concat({
+      id: messages.length.toString(),
+      content: input,
+      role: "user",
+    });
+    setMessages(messagesWithUserReply);
+    const response = await fetch(endpoint, {
+      method: "POST",
+      body: JSON.stringify({
+        messages: messagesWithUserReply,
+        show_intermediate_steps: true,
+      }),
+    });
+    const json = await response.json();
+    setIntermediateStepsLoading(false);
+    if (response.status === 200) {
+      const responseMessages: Message[] = json.messages;
+      // Represent intermediate steps as system messages for display purposes
+      // TODO: Add proper support for tool messages
+      const toolCallMessages = responseMessages.filter(
+        (responseMessage: Message) => {
+          return (
+            (responseMessage.role === "assistant" &&
+              !!responseMessage.tool_calls?.length) ||
+            responseMessage.role === "tool"
           );
-        }
-        setMessages([
-          ...newMessages,
-          {
-            id: newMessages.length.toString(),
-            content: responseMessages[responseMessages.length - 1].content,
-            role: "assistant",
-          },
-        ]);
-      } else {
-        if (json.error) {
-          toast(json.error, {
-            theme: "dark",
-          });
-          throw new Error(json.error);
-        }
+        },
+      );
+      const intermediateStepMessages = [];
+      for (let i = 0; i < toolCallMessages.length; i += 2) {
+        const aiMessage = toolCallMessages[i];
+        const toolMessage = toolCallMessages[i + 1];
+        intermediateStepMessages.push({
+          id: (messagesWithUserReply.length + i / 2).toString(),
+          role: "system" as const,
+          content: JSON.stringify({
+            action: aiMessage.tool_calls?.[0],
+            observation: JSON.parse(toolMessage.content),
+          }),
+        });
+      }
+      const newMessages = messagesWithUserReply;
+      for (const message of intermediateStepMessages) {
+        newMessages.push(message);
+        setMessages([...newMessages]);
+        await new Promise((resolve) =>
+          setTimeout(resolve, 1000 + Math.random() * 1000),
+        );
+      }
+      setMessages([
+        ...newMessages,
+        {
+          id: newMessages.length.toString(),
+          content: responseMessages[responseMessages.length - 1].content,
+          role: "assistant",
+        },
+      ]);
+    } else {
+      if (json.error) {
+        toast(json.error, {
+          theme: "dark",
+        });
+        throw new Error(json.error);
       }
     }
   }
 
+  useEffect(() => {
+    const { messages: transformedMessages, authorizationEndpoint } =
+      transformWithAuthorization(messages);
+    setMessages(transformedMessages);
+    setAuthorizationEndpoint(authorizationEndpoint);
+  }, [messages, setMessages]);
+
+  console.log(authorizationEndpoint);
   return (
     <div
       className={`flex flex-col items-center p-4 md:p-8 rounded-3xl grow overflow-hidden ${
@@ -184,11 +211,23 @@ export function ChatWindow(props: {
         className="flex flex-col-reverse w-full mb-4 overflow-auto transition-[flex-grow] ease-in-out"
         ref={messageContainerRef}
       >
+        {authorizationEndpoint && (
+          <div>
+            <a
+              href={authorizationEndpoint?.url}
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Authorize
+            </a>
+          </div>
+        )}
         {messages.length > 0
           ? [...messages].reverse().map((m, i) => {
               const sourceKey = (messages.length - 1 - i).toString();
               return m.role === "system" ? (
-                <IntermediateStep key={m.id} message={m}></IntermediateStep>
+                showIntermediateSteps && (
+                  <IntermediateStep key={m.id} message={m}></IntermediateStep>
+                )
               ) : (
                 <ChatMessageBubble
                   key={m.id}

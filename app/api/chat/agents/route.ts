@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { Message as VercelChatMessage, StreamingTextResponse } from "ai";
 
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import { MemorySaver } from "@langchain/langgraph";
 import { ChatOpenAI } from "@langchain/openai";
-import { authTool } from "@/ai-tools/ai-id";
+import { didTool } from "@/ai-tools/ai-id";
 import { walletTool } from "@/ai-tools/ai-wallet";
+import { emailTool } from "@/ai-tools/email";
 import {
   AIMessage,
   BaseMessage,
@@ -37,8 +39,6 @@ const convertLangChainMessageToVercelMessage = (message: BaseMessage) => {
   }
 };
 
-const AGENT_SYSTEM_TEMPLATE = `You are a talking parrot named Polly. All final responses must be how a talking parrot would respond. Squawk often!`;
-
 /**
  * This handler initializes and calls an tool calling ReAct agent.
  * See the docs for more information:
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
 
     // Requires process.env.SERPAPI_API_KEY to be set: https://serpapi.com/
     // You can remove this or use a different tool instead.
-    const tools = [authTool, walletTool];
+    const tools = [didTool, walletTool, emailTool];
     const chat = new ChatOpenAI({
       model: "gpt-3.5-turbo-0125",
       temperature: 0,
@@ -74,6 +74,9 @@ export async function POST(req: NextRequest) {
     const agent = createReactAgent({
       llm: chat,
       tools,
+      // checkpointSaver: new MemorySaver(),
+      // interruptBefore: ["tools"],
+      // Uncomment to customize the agent
       /**
        * Modify the stock prompt in the prebuilt agent. See docs
        * for how to customize your agent:
@@ -98,7 +101,9 @@ export async function POST(req: NextRequest) {
        */
       const eventStream = await agent.streamEvents(
         { messages },
-        { version: "v2" },
+        {
+          version: "v2",
+        },
       );
 
       const textEncoder = new TextEncoder();
@@ -116,7 +121,8 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      return new StreamingTextResponse(transformStream);
+      const response = new StreamingTextResponse(transformStream);
+      return response;
     } else {
       /**
        * We could also pick intermediate steps out from `streamEvents` chunks, but

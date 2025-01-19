@@ -5,7 +5,7 @@ import axios from "axios";
 const { IDP_USER, IDP_PASS, DID, IDP_URL } = process.env;
 const endpoint = IDP_URL;
 const did = DID && encodeURIComponent(DID);
-export const authTool = tool(
+export const didTool = tool(
   async () => {
     try {
       // Add basic Auth

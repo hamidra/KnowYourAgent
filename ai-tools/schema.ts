@@ -7,3 +7,10 @@ export const authSchema = z.object({
       "The entity that the ai agent seeks to authenticate and retrieve identity information for. If it seeks to query its own identity return 'ai', otherwise for any other entity (e.g. user) return 'other'",
     ),
 });
+
+export const getEmailSchema = z.object({
+  subject: z
+    .number()
+    .default(10)
+    .describe("maximum number of emails to return"),
+});
