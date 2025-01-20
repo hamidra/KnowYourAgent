@@ -10,24 +10,29 @@ import type { FormEvent } from "react";
 
 import { ChatMessageBubble } from "@/components/ChatMessageBubble";
 import { IntermediateStep } from "./IntermediateStep";
+import { HumanActionStep } from "./HumanAction";
+import { usePersistedConversation } from "@/hooks/persistedState";
 
-function parseAuthorizationEndpoint(message: Message) {
+function parseHumanAction(message: Message) {
   if (message?.role !== "system") return;
   const content = JSON.parse(message.content);
-  return content.observation?.authorizationEndpoint;
+  return content.observation?.humanAction;
 }
 
-function transformWithAuthorization(messages: Message[]) {
+function transformWithHumanAction(messages: Message[]) {
   const lastMessage = messages[messages.length - 1];
   const secondLastMessage = messages[messages.length - 2];
-  const authorizationEndpoint = parseAuthorizationEndpoint(secondLastMessage);
-  if (authorizationEndpoint) {
-    // if the second last message is a system message with an authorization endpoint, remove the last assistant message
-    return { messages: messages.slice(0, -1), authorizationEndpoint };
+  const humanAction = parseHumanAction(secondLastMessage);
+  if (humanAction) {
+    // if the second last message is a system message with a human in the loop action, remove the last assistant message
+    return { messages: messages.slice(0, -2), humanAction };
   } else {
-    // otherwise try to extract the authorizationMessage from the last message if it is authorizationMessage
-    const authorizationEndpoint = parseAuthorizationEndpoint(lastMessage);
-    return { messages, authorizationEndpoint };
+    // otherwise try to extract the human action from the last message if it is a human in the loop action
+    const humanAction = parseHumanAction(lastMessage);
+    return {
+      messages: humanAction ? messages.slice(0, -1) : messages,
+      humanAction,
+    };
   }
 }
 
@@ -53,9 +58,7 @@ export function ChatWindow(props: {
   const [showIntermediateSteps, setShowIntermediateSteps] = useState(false);
   const [intermediateStepsLoading, setIntermediateStepsLoading] =
     useState(false);
-  const [authorizationEndpoint, setAuthorizationEndpoint] = useState<
-    any | null
-  >(null);
+  const [humanAction, setHumanAction] = useState<any | null>(null);
 
   const intemediateStepsToggle = showIntermediateStepsToggle && (
     <div>
@@ -73,6 +76,10 @@ export function ChatWindow(props: {
   const [sourcesForMessages, setSourcesForMessages] = useState<
     Record<string, any>
   >({});
+
+  const { getConversation, setConversation, clearConversation } =
+    usePersistedConversation<Message>("conversation");
+
   const {
     messages,
     input,
@@ -102,10 +109,10 @@ export function ChatWindow(props: {
         theme: "dark",
       });
     },
+    initialMessages: getConversation(),
   });
 
-  async function sendMessage(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function sendMessage() {
     if (messageContainerRef.current) {
       messageContainerRef.current.classList.add("grow");
     }
@@ -118,12 +125,16 @@ export function ChatWindow(props: {
 
     setIntermediateStepsLoading(true);
     setInput("");
-    const messagesWithUserReply = messages.concat({
-      id: messages.length.toString(),
-      content: input,
-      role: "user",
-    });
+    const messagesWithUserReply = input
+      ? messages.concat({
+          id: messages.length.toString(),
+          content: input,
+          role: "user",
+        })
+      : messages;
     setMessages(messagesWithUserReply);
+
+    // fetch LLM response
     const response = await fetch(endpoint, {
       method: "POST",
       body: JSON.stringify({
@@ -132,6 +143,7 @@ export function ChatWindow(props: {
       }),
     });
     const json = await response.json();
+
     setIntermediateStepsLoading(false);
     if (response.status === 200) {
       const responseMessages: Message[] = json.messages;
@@ -150,14 +162,16 @@ export function ChatWindow(props: {
       for (let i = 0; i < toolCallMessages.length; i += 2) {
         const aiMessage = toolCallMessages[i];
         const toolMessage = toolCallMessages[i + 1];
-        intermediateStepMessages.push({
-          id: (messagesWithUserReply.length + i / 2).toString(),
-          role: "system" as const,
-          content: JSON.stringify({
-            action: aiMessage.tool_calls?.[0],
-            observation: JSON.parse(toolMessage.content),
-          }),
-        });
+        if (aiMessage && toolMessage) {
+          intermediateStepMessages.push({
+            id: (messagesWithUserReply.length + i / 2).toString(),
+            role: "system" as const,
+            content: JSON.stringify({
+              action: aiMessage.tool_calls?.[0],
+              observation: JSON.parse(toolMessage.content),
+            }),
+          });
+        }
       }
       const newMessages = messagesWithUserReply;
       for (const message of intermediateStepMessages) {
@@ -185,14 +199,25 @@ export function ChatWindow(props: {
     }
   }
 
+  // transform messages to extract human action if any
   useEffect(() => {
-    const { messages: transformedMessages, authorizationEndpoint } =
-      transformWithAuthorization(messages);
+    const { messages: transformedMessages, humanAction } =
+      transformWithHumanAction(messages);
     setMessages(transformedMessages);
-    setAuthorizationEndpoint(authorizationEndpoint);
-  }, [messages, setMessages]);
+    humanAction && setHumanAction(humanAction);
+  }, [messages, humanAction, setMessages, setHumanAction]);
 
-  console.log(authorizationEndpoint);
+  // persist messages to local storage
+  useEffect(() => {
+    setConversation(messages);
+  }, [messages, setConversation]);
+
+  // if the page is loaded and the last message is not from assistant, send the messages to continue.
+  useEffect(() => {
+    if (messages.length > 0 && messages.slice(-1)[0].role != "assistant") {
+      sendMessage();
+    }
+  }, []);
   return (
     <div
       className={`flex flex-col items-center p-4 md:p-8 rounded-3xl grow overflow-hidden ${
@@ -211,15 +236,11 @@ export function ChatWindow(props: {
         className="flex flex-col-reverse w-full mb-4 overflow-auto transition-[flex-grow] ease-in-out"
         ref={messageContainerRef}
       >
-        {authorizationEndpoint && (
-          <div>
-            <a
-              href={authorizationEndpoint?.url}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            >
-              Authorize
-            </a>
-          </div>
+        {humanAction && (
+          <HumanActionStep
+            key={humanAction.id}
+            humanAction={humanAction}
+          ></HumanActionStep>
         )}
         {messages.length > 0
           ? [...messages].reverse().map((m, i) => {
@@ -242,7 +263,14 @@ export function ChatWindow(props: {
 
       {messages.length === 0}
 
-      <form onSubmit={sendMessage} className="flex w-full flex-col">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          // if there is an input text, send it
+          input && sendMessage();
+        }}
+        className="flex w-full flex-col"
+      >
         <div className="flex">{intemediateStepsToggle}</div>
         <div className="flex w-full mt-4">
           <input

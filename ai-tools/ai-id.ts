@@ -17,7 +17,6 @@ export const didTool = tool(
         )}`,
       };
       const response = await axios.get(getDIDUrl, { headers });
-      console.log(headers);
       console.info(response.headers);
       // Check if HTTP status is OK
       if (response.status >= 400) {

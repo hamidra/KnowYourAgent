@@ -1,6 +1,13 @@
+"use client";
+import { useState, useEffect } from "react";
 import { ChatWindow } from "@/components/ChatWindow";
 
 export default function AgentsPage() {
+  const [isHydrated, setIsHydrated] = useState(false);
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
   const InfoCard = (
     <div className="p-4 md:p-8 border-2 rounded-3xl w-full max-h-[85%] overflow-hidden">
       <h1 className="text-3xl md:text-6xl mb-4">▲ Know Your Agent</h1>
@@ -22,13 +29,15 @@ export default function AgentsPage() {
     </div>
   );
   return (
-    <ChatWindow
-      endpoint="api/chat/agents"
-      emptyStateComponent={InfoCard}
-      placeholder="Hi! Ask me about myself, my identity, how much money I have! Ask me about anything!"
-      titleText="Know Your Agent."
-      emoji="🤖"
-      showIntermediateStepsToggle={true}
-    ></ChatWindow>
+    isHydrated && (
+      <ChatWindow
+        endpoint="api/chat/agents"
+        emptyStateComponent={InfoCard}
+        placeholder="Hi! Ask me about myself, my identity, how much money I have! Ask me about anything!"
+        titleText="Know Your Agent."
+        emoji="🤖"
+        showIntermediateStepsToggle={true}
+      ></ChatWindow>
+    )
   );
 }
