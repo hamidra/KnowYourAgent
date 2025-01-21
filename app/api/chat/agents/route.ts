@@ -85,58 +85,20 @@ export async function POST(req: NextRequest) {
       // messageModifier: new SystemMessage(AGENT_SYSTEM_TEMPLATE),
     });
 
-    if (!returnIntermediateSteps) {
-      /**
-       * Stream back all generated tokens and steps from their runs.
-       *
-       * We do some filtering of the generated events and only stream back
-       * the final response as a string.
-       *
-       * For this specific type of tool calling ReAct agents with OpenAI, we can tell when
-       * the agent is ready to stream back final output when it no longer calls
-       * a tool and instead streams back content.
-       *
-       * See: https://langchain-ai.github.io/langgraphjs/how-tos/stream-tokens/
-       */
-      const eventStream = await agent.streamEvents(
-        { messages },
-        {
-          version: "v2",
-        },
-      );
-
-      const textEncoder = new TextEncoder();
-      const transformStream = new ReadableStream({
-        async start(controller) {
-          for await (const { event, data } of eventStream) {
-            if (event === "on_chat_model_stream") {
-              // Intermediate chat model generations will contain tool calls and no content
-              if (!!data.chunk.content) {
-                controller.enqueue(textEncoder.encode(data.chunk.content));
-              }
-            }
-          }
-          controller.close();
-        },
-      });
-
-      const response = new StreamingTextResponse(transformStream);
-      return response;
-    } else {
-      /**
-       * We could also pick intermediate steps out from `streamEvents` chunks, but
-       * they are generated as JSON objects, so streaming and displaying them with
-       * the AI SDK is more complicated.
-       */
-      const result = await agent.invoke({ messages });
-      return NextResponse.json(
-        {
-          messages: result.messages.map(convertLangChainMessageToVercelMessage),
-        },
-        { status: 200 },
-      );
-    }
+    /**
+     * We could also pick intermediate steps out from `streamEvents` chunks, but
+     * they are generated as JSON objects, so streaming and displaying them with
+     * the AI SDK is more complicated.
+     */
+    const result = await agent.invoke({ messages });
+    return NextResponse.json(
+      {
+        messages: result.messages.map(convertLangChainMessageToVercelMessage),
+      },
+      { status: 200 },
+    );
   } catch (e: any) {
+    console.error(e);
     return NextResponse.json({ error: e.message }, { status: e.status ?? 500 });
   }
 }

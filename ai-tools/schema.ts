@@ -9,8 +9,5 @@ export const authSchema = z.object({
 });
 
 export const getEmailSchema = z.object({
-  subject: z
-    .number()
-    .default(10)
-    .describe("maximum number of emails to return"),
+  limit: z.number().default(10).describe("maximum number of emails to return"),
 });
