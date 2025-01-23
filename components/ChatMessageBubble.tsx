@@ -13,7 +13,7 @@ export function ChatMessageBubble(props: {
   const prefix = props.message.role === "user" ? "🧑" : props.aiEmoji;
   return (
     <div
-      className={`${alignmentClassName} ${colorClassName} rounded-3xl px-4 py-2 max-w-[80%] mb-8 flex`}
+      className={`${alignmentClassName} ${colorClassName} rounded-3xl px-4 py-2 max-w-[80%] my-4 flex`}
     >
       <div className="mr-2">{prefix}</div>
       <div className="whitespace-pre-wrap flex flex-col">
