@@ -5,10 +5,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const queryClient = new QueryClient();
 
+const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
+
 export function PrivyProvider({ children }: { children: React.ReactNode }) {
+  if (!appId) {
+    throw new Error('NEXT_PUBLIC_PRIVY_APP_ID is not set');
+  }
+
   return (
     <BasePrivyProvider
-      appId="cm68ehgsx06ogl3c474g3bm42"
+      appId={appId}
       config={{
         appearance: {
           theme: 'light',
