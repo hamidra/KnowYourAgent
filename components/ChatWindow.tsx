@@ -3,15 +3,28 @@
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+import { CHAT_CONSTANTS } from "@/constants/chat";
 import { Message } from "ai";
 import { useChat } from "ai/react";
-import { useRef, useState, ReactElement, useEffect } from "react";
+import { useRef, useState, ReactElement, useEffect, useMemo } from "react";
 import type { FormEvent } from "react";
 
 import { ChatMessageBubble } from "@/components/ChatMessageBubble";
 import { IntermediateStep } from "./IntermediateStep";
 import { HumanActionStep } from "./HumanAction";
 import { usePersistedConversation } from "@/hooks/persistedState";
+
+type HumanAction = {
+  id: string;
+  url: string;
+  metadata: {
+    name: string;
+    description: string;
+    logo?: string;
+    title: string;
+    btnText?: string;
+  };
+};
 
 function parseHumanAction(message: Message) {
   if (message?.role !== "system") return;
@@ -50,7 +63,7 @@ export function ChatWindow(props: {
     endpoint,
     emptyStateComponent,
     placeholder,
-    titleText = "Tesser LLM",
+    titleText = CHAT_CONSTANTS.DEFAULT_TITLE,
     showIntermediateStepsToggle,
     emoji,
   } = props;
@@ -58,7 +71,7 @@ export function ChatWindow(props: {
   const [showIntermediateSteps, setShowIntermediateSteps] = useState(false);
   const [intermediateStepsLoading, setIntermediateStepsLoading] =
     useState(false);
-  const [humanAction, setHumanAction] = useState<any | null>(null);
+  const [humanAction, setHumanAction] = useState<HumanAction | null>(null);
 
   const intemediateStepsToggle = showIntermediateStepsToggle && (
     <div>
@@ -113,39 +126,48 @@ export function ChatWindow(props: {
   });
 
   async function sendMessage() {
-    if (messageContainerRef.current) {
-      messageContainerRef.current.classList.add("grow");
-    }
-    if (!messages.length) {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-    }
-    if (chatEndpointIsLoading ?? intermediateStepsLoading) {
-      return;
-    }
+    try {
+      if (!input.trim()) return;
+      
+      setIntermediateStepsLoading(true);
+      if (messageContainerRef.current) {
+        messageContainerRef.current.classList.add("grow");
+      }
+      if (!messages.length) {
+        await new Promise((resolve) => setTimeout(resolve, CHAT_CONSTANTS.LOADING_DELAY));
+      }
+      if (chatEndpointIsLoading ?? intermediateStepsLoading) {
+        return;
+      }
 
-    setIntermediateStepsLoading(true);
-    setInput("");
-    const messagesWithUserReply = input
-      ? messages.concat({
-          id: messages.length.toString(),
-          content: input,
-          role: "user",
-        })
-      : messages;
-    setMessages(messagesWithUserReply);
+      setInput("");
+      const messagesWithUserReply = input
+        ? messages.concat({
+            id: messages.length.toString(),
+            content: input,
+            role: "user",
+          })
+        : messages;
+      setMessages(messagesWithUserReply);
 
-    // fetch LLM response
-    const response = await fetch(endpoint, {
-      method: "POST",
-      body: JSON.stringify({
-        messages: messagesWithUserReply,
-        show_intermediate_steps: true,
-      }),
-    });
-    const json = await response.json();
+      // fetch LLM response
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: messagesWithUserReply,
+          show_intermediate_steps: true,
+        }),
+      });
 
-    setIntermediateStepsLoading(false);
-    if (response.status === 200) {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const json = await response.json();
+
       const responseMessages: Message[] = json.messages;
       // Represent intermediate steps as system messages for display purposes
       // TODO: Add proper support for tool messages
@@ -178,7 +200,7 @@ export function ChatWindow(props: {
         newMessages.push(message);
         setMessages([...newMessages]);
         await new Promise((resolve) =>
-          setTimeout(resolve, 1000 + Math.random() * 1000),
+          setTimeout(resolve, CHAT_CONSTANTS.INTERMEDIATE_STEP_DELAY),
         );
       }
       setMessages([
@@ -189,13 +211,13 @@ export function ChatWindow(props: {
           role: "assistant",
         },
       ]);
-    } else {
-      if (json.error) {
-        toast(json.error, {
-          theme: "dark",
-        });
-        throw new Error(json.error);
-      }
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "An error occurred", {
+        theme: "dark",
+        type: "error",
+      });
+    } finally {
+      setIntermediateStepsLoading(false);
     }
   }
 
@@ -218,9 +240,30 @@ export function ChatWindow(props: {
       sendMessage();
     }
   }, []);
+
+  const memoizedMessageList = useMemo(() => 
+    messages.length > 0
+      ? [...messages].reverse().map((m, i) => {
+          const sourceKey = (messages.length - 1 - i).toString();
+          return m.role === "system" ? (
+            showIntermediateSteps && (
+              <IntermediateStep key={m.id} message={m}></IntermediateStep>
+            )
+          ) : (
+            <ChatMessageBubble
+              key={m.id}
+              message={m}
+              aiEmoji={emoji}
+              sources={sourcesForMessages[sourceKey]}
+            ></ChatMessageBubble>
+          );
+        })
+      : null
+  , [messages, showIntermediateSteps, sourcesForMessages]);
+
   return (
-    <div className="flex max-w-3xl flex-col h-[calc(100vh-4rem)]">
-      <div className="flex-1 overflow-y-auto">
+    <div className="flex max-w-3xl flex-col h-[calc(100vh-4rem)]" data-testid="chat-window">
+      <div className="flex-1 overflow-y-auto" data-testid="message-container">
         <div className="mx-auto px-4">
           {messages.length === 0 ? emptyStateComponent : ""}
           <div
@@ -233,23 +276,7 @@ export function ChatWindow(props: {
                 humanAction={humanAction}
               ></HumanActionStep>
             )}
-            {messages.length > 0
-              ? [...messages].reverse().map((m, i) => {
-                  const sourceKey = (messages.length - 1 - i).toString();
-                  return m.role === "system" ? (
-                    showIntermediateSteps && (
-                      <IntermediateStep key={m.id} message={m}></IntermediateStep>
-                    )
-                  ) : (
-                    <ChatMessageBubble
-                      key={m.id}
-                      message={m}
-                      aiEmoji={emoji}
-                      sources={sourcesForMessages[sourceKey]}
-                    ></ChatMessageBubble>
-                  );
-                })
-              : ""}
+            {memoizedMessageList}
           </div>
         </div>
       </div>
@@ -266,6 +293,8 @@ export function ChatWindow(props: {
           <div className="flex">{intemediateStepsToggle}</div>
           <div className="flex w-full py-4">
             <input
+              aria-label="Chat input"
+              role="textbox"
               className="grow mr-8 p-4 border rounded-full shadow-md"
               value={input}
               placeholder={placeholder ?? "Ask me anything?"}

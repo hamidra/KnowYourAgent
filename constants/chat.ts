@@ -1,0 +1,5 @@
+export const CHAT_CONSTANTS = {
+  LOADING_DELAY: 300,
+  INTERMEDIATE_STEP_DELAY: 1000,
+  DEFAULT_TITLE: "Tesser LLM",
+} as const;
