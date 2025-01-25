@@ -6,7 +6,7 @@ export type ActionMetadata = {
   logo: string;
 };
 
-export type Action = {
+export type HumanAction = {
   url: string;
   metadata: ActionMetadata;
   /*

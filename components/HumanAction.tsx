@@ -1,6 +1,6 @@
-import { Action } from "@/types/HumanAction";
+import type { HumanAction } from "@/types/HumanAction";
 
-export function HumanActionStep(props: { humanAction: Action }) {
+export function HumanActionStep(props: { humanAction: HumanAction }) {
   const { humanAction } = props;
   const { url, metadata } = humanAction;
   const { name, description, logo, title, btnText } = metadata;

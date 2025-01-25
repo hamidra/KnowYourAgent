@@ -6,6 +6,8 @@ import { ChatOpenAI } from "@langchain/openai";
 import { didTool } from "@/ai-tools/ai-id";
 import { walletTool } from "@/ai-tools/ai-wallet";
 import { emailTool } from "@/ai-tools/gmail";
+import { shopifyTool } from "@/ai-tools/shopify";
+
 import {
   AIMessage,
   BaseMessage,
@@ -61,7 +63,7 @@ export async function POST(req: NextRequest) {
 
     // Requires process.env.SERPAPI_API_KEY to be set: https://serpapi.com/
     // You can remove this or use a different tool instead.
-    const tools = [didTool, walletTool, emailTool];
+    const tools = [didTool, walletTool, emailTool, shopifyTool];
     const chat = new ChatOpenAI({
       model: "gpt-3.5-turbo-0125",
       temperature: 0,

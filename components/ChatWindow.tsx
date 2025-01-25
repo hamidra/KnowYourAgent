@@ -13,18 +13,7 @@ import { ChatMessageBubble } from "@/components/ChatMessageBubble";
 import { IntermediateStep } from "./IntermediateStep";
 import { HumanActionStep } from "./HumanAction";
 import { usePersistedConversation } from "@/hooks/persistedState";
-
-type HumanAction = {
-  id: string;
-  url: string;
-  metadata: {
-    name: string;
-    description: string;
-    logo?: string;
-    title: string;
-    btnText?: string;
-  };
-};
+import type { HumanAction } from "@/types/HumanAction";
 
 function parseHumanAction(message: Message) {
   if (message?.role !== "system") return;
@@ -128,13 +117,15 @@ export function ChatWindow(props: {
   async function sendMessage() {
     try {
       if (!input.trim()) return;
-      
+
       setIntermediateStepsLoading(true);
       if (messageContainerRef.current) {
         messageContainerRef.current.classList.add("grow");
       }
       if (!messages.length) {
-        await new Promise((resolve) => setTimeout(resolve, CHAT_CONSTANTS.LOADING_DELAY));
+        await new Promise((resolve) =>
+          setTimeout(resolve, CHAT_CONSTANTS.LOADING_DELAY),
+        );
       }
       if (chatEndpointIsLoading ?? intermediateStepsLoading) {
         return;
@@ -241,28 +232,33 @@ export function ChatWindow(props: {
     }
   }, []);
 
-  const memoizedMessageList = useMemo(() => 
-    messages.length > 0
-      ? [...messages].reverse().map((m, i) => {
-          const sourceKey = (messages.length - 1 - i).toString();
-          return m.role === "system" ? (
-            showIntermediateSteps && (
-              <IntermediateStep key={m.id} message={m}></IntermediateStep>
-            )
-          ) : (
-            <ChatMessageBubble
-              key={m.id}
-              message={m}
-              aiEmoji={emoji}
-              sources={sourcesForMessages[sourceKey]}
-            ></ChatMessageBubble>
-          );
-        })
-      : null
-  , [messages, showIntermediateSteps, sourcesForMessages]);
+  const memoizedMessageList = useMemo(
+    () =>
+      messages.length > 0
+        ? [...messages].reverse().map((m, i) => {
+            const sourceKey = (messages.length - 1 - i).toString();
+            return m.role === "system" ? (
+              showIntermediateSteps && (
+                <IntermediateStep key={m.id} message={m}></IntermediateStep>
+              )
+            ) : (
+              <ChatMessageBubble
+                key={m.id}
+                message={m}
+                aiEmoji={emoji}
+                sources={sourcesForMessages[sourceKey]}
+              ></ChatMessageBubble>
+            );
+          })
+        : null,
+    [messages, showIntermediateSteps, sourcesForMessages],
+  );
 
   return (
-    <div className="flex max-w-3xl flex-col h-[calc(100vh-4rem)]" data-testid="chat-window">
+    <div
+      className="flex max-w-3xl flex-col h-[calc(100vh-4rem)]"
+      data-testid="chat-window"
+    >
       <div className="flex-1 overflow-y-auto" data-testid="message-container">
         <div className="mx-auto px-4">
           {messages.length === 0 ? emptyStateComponent : ""}
@@ -271,16 +267,13 @@ export function ChatWindow(props: {
             ref={messageContainerRef}
           >
             {humanAction && (
-              <HumanActionStep
-                key={humanAction.id}
-                humanAction={humanAction}
-              ></HumanActionStep>
+              <HumanActionStep humanAction={humanAction}></HumanActionStep>
             )}
             {memoizedMessageList}
           </div>
         </div>
       </div>
-      
+
       <form
         onSubmit={(e) => {
           e.preventDefault();

@@ -11,3 +11,13 @@ export const authSchema = z.object({
 export const getEmailSchema = z.object({
   limit: z.number().default(10).describe("maximum number of emails to return"),
 });
+
+export const getShopifyProductsSchema = z.object({
+  storeName: z
+    .string()
+    .describe("the name of the store to fetch products from"),
+  limit: z
+    .number()
+    .default(10)
+    .describe("maximum number of products to return"),
+});

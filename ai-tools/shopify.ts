@@ -1,5 +1,5 @@
 import { tool } from "@langchain/core/tools";
-import { getEmailSchema } from "./schema";
+import { getShopifyProductsSchema } from "./schema";
 import { getAuthURL } from "./utils/auth";
 
 const { ACTION_API_ENDPOINT, DID } = process.env;
@@ -8,42 +8,44 @@ if (!DID || !ACTION_API_ENDPOINT) {
   throw new Error("DID or ACTION_API_ENDPOINT is not set");
 }
 
-export const emailTool = tool(
-  async ({ limit }) => {
-    const authEndpointURL = getAuthURL({ provider: "google", udid: DID });
+export const shopifyTool = tool(
+  async ({ limit, storeName }) => {
+    const authEndpointURL = getAuthURL({
+      provider: "shopify",
+      resource: storeName,
+      udid: DID,
+    });
     const authAction = {
       url: authEndpointURL.toString(),
       metadata: {
-        title: "Login to Gmail",
-        name: "gmail",
+        title: "Login to your Shopify Store",
+        name: "shopify",
         description:
-          "login to your gmail account to allow access to your gmail box, so I can fetch your emails for you",
-        logo: "https://lh3.googleusercontent.com/0rpHlrX8IG77awQMuUZpQ0zGWT7HRYtpncsuRnFo6V3c8Lh2hPjXnEuhDDd-OsLz1vua4ld2rlUYFAaBYk-rZCODmi2eJlwUEVsZgg",
-        btnText: "Login to Gmail",
+          "login to your Shopify Store to allow access to your store information",
+        logo: "https://cdn.shopify.com/shopifycloud/brochure/assets/brand-assets/shopify-logo-shopping-bag-full-color-66166b2e55d67988b56b4bd28b63c271e2b9713358cb723070a92bde17ad7d63.svg",
+        btnText: "Login to Shopify",
       },
     };
 
     // Action Endpoint URL
     const actionEndpointURL = new URL(
-      "google/gmail/messages",
+      `shopify/${storeName}/products`,
       ACTION_API_ENDPOINT,
     );
 
     const agentDID = DID;
+
     actionEndpointURL.searchParams.set("limit", limit.toString());
+    // TODO: replace agentDID with userDID when we have the full user did in place
     actionEndpointURL.searchParams.set("udid", agentDID as string);
+
     const response = await fetch(actionEndpointURL);
     if (response.status === 401) {
       return { humanAction: authAction };
     } else if (response.status < 300) {
       const data = await response.json();
       console.info(data);
-      return JSON.stringify(
-        data.map((email: any, i: number) => ({
-          index: i,
-          snippent: email.snippet,
-        })),
-      );
+      return data;
     } else {
       console.error(response);
       return {
@@ -52,8 +54,8 @@ export const emailTool = tool(
     }
   },
   {
-    name: "get_email_tool",
-    description: `This tool is used to fetch the user's email from gmail.`,
-    schema: getEmailSchema,
+    name: "get_shopify_products",
+    description: `This tool is used to fetch the user's products from their Shopify store.`,
+    schema: getShopifyProductsSchema,
   },
 );
