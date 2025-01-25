@@ -116,8 +116,6 @@ export function ChatWindow(props: {
 
   async function sendMessage() {
     try {
-      if (!input.trim()) return;
-
       setIntermediateStepsLoading(true);
       if (messageContainerRef.current) {
         messageContainerRef.current.classList.add("grow");
