@@ -15,6 +15,16 @@ import {
 import { SystemMessage } from "@langchain/core/messages";
 
 const { AGENT_DISCOVERY_ENDPOINT, AGENT_DISCOVERY_ENABLED } = process.env;
+
+// tools
+const TOOLS = process.env.TOOLS;
+
+const toolkit: Record<string, any> = {
+  gmail: emailTool,
+  shopify: shopifyTool,
+  did: didTool,
+  wallet: walletTool,
+};
 /**
  * This handler initializes and calls an tool calling ReAct agent.
  * See the docs for more information:
@@ -38,7 +48,8 @@ export async function POST(req: NextRequest) {
 
     // Requires process.env.SERPAPI_API_KEY to be set: https://serpapi.com/
     // You can remove this or use a different tool instead.
-    const tools = [didTool, walletTool, emailTool, shopifyTool];
+    const tools = TOOLS?.split(",").map((tool) => toolkit[tool]) || [];
+
     const chat = new ChatOpenAI({
       model: "gpt-4o",
       temperature: 0,
