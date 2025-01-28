@@ -9,6 +9,8 @@ import { ChatOpenAI } from "@langchain/openai";
 
 import { StateGraph, END, START } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
+import { randomUUID } from "crypto";
+import { ResponseMetadata } from "@/types/Message";
 
 export const convertVercelMessageToLangChainMessage = (
   message: VercelChatMessage,
@@ -25,17 +27,25 @@ export const convertVercelMessageToLangChainMessage = (
 export const convertLangChainMessageToVercelMessage = (
   message: BaseMessage,
 ) => {
+  let vercelMessage: Record<string, any>;
   if (message._getType() === "human") {
-    return { content: message.content, role: "user" };
+    vercelMessage = {
+      id: message.id || randomUUID(),
+      content: message.content as string,
+      role: "user",
+    };
   } else if (message._getType() === "ai") {
-    return {
-      content: message.content,
+    vercelMessage = {
+      id: message.id || randomUUID(),
+      content: message.content as string,
       role: "assistant",
       tool_calls: (message as AIMessage).tool_calls,
     };
   } else {
-    return { content: message.content, role: message._getType() };
+    vercelMessage = { content: message.content, role: message._getType() };
   }
+  vercelMessage.annotations = [{ ...message.response_metadata }];
+  return vercelMessage as VercelChatMessage;
 };
 
 // Define the state interface for type safety
@@ -88,7 +98,10 @@ async function callRemoteAgent(
 }
 export async function createCustomAgentGraph(
   tools: any[],
-  multiAgentConfig: { enabled: boolean; endpoint?: string } = {
+  multiAgentConfig: {
+    enabled: boolean;
+    endpoint?: string;
+  } = {
     enabled: false,
   },
 ) {
@@ -144,17 +157,13 @@ export async function createCustomAgentGraph(
       multiAgentConfig.endpoint,
       userMessage,
     );
-    const intermediateMessages = response.slice(0, -1);
-    const finalMessage = response.slice(-1)[0];
     return {
       messages: [
         ...messages,
-        ...intermediateMessages,
-        new AIMessage(
-          `I was not able to find a tool to help with your request. 
-            I checked with other agents in my network and received this response from a remote agent: 
-            \n ${finalMessage.content}`,
-        ),
+        ...response.map((remoteMessage) => {
+          remoteMessage.response_metadata.remote = true;
+          return remoteMessage;
+        }),
       ],
     };
   }
@@ -167,12 +176,14 @@ export async function createCustomAgentGraph(
     if (lastMessage?.tool_calls?.length) {
       return "tools";
     }
-
-    const nextNode =
-      multiAgentConfig.enabled && multiAgentConfig.endpoint
-        ? "agent_discovery"
-        : "single_agent";
-    return nextNode;
+    if (
+      multiAgentConfig.enabled &&
+      multiAgentConfig.endpoint &&
+      (lastMessage?.content as string).includes("<agent_discovery>")
+    ) {
+      return "agent_discovery";
+    }
+    return "end";
   }
 
   function shouldContinue(state: AgentState) {
@@ -184,6 +195,7 @@ export async function createCustomAgentGraph(
       return END;
     }
   }
+
   // Create and configure the graph
   const workflow = new StateGraph<AgentState>({ channels: graphState })
     // Add nodes
@@ -196,10 +208,10 @@ export async function createCustomAgentGraph(
     .addConditionalEdges("multi_agent", routeInitial, {
       tools: "tools",
       agent_discovery: "agent_discovery",
-      single_agent: "single_agent",
+      end: END,
     })
     .addEdge("tools", "single_agent")
-    .addEdge("agent_discovery", "single_agent")
+    .addEdge("agent_discovery", END)
     .addConditionalEdges("single_agent", shouldContinue);
 
   // Compile the graph

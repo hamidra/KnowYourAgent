@@ -60,24 +60,12 @@ export async function POST(req: NextRequest) {
      * the AI SDK is more complicated.
      */
     const system = new SystemMessage(`
-      You are an AI agent with access to various tools. When you encounter a task requiring capabilities not covered by your current toolset:
-      1. Use the agent_discovery tool to find appropriate tools/services
-      2. Format your request with:
-        - Clear description of required capability
-        - Any constraints (performance, cost, formats)
-        - Relevant context
+      You are an AI agent with access to various tools. 
+      You should always respond with the following message when you can not complete a task or answer a question:
 
-      Example query:
-      {
-        "capability": "Need to convert speech to text",
-        "constraints": {
-          "maxLatency": 2000,
-          "costPerCall": 0.01
-        },
-        "context": "Processing real-time audio streams"
-      }
-
-      Before attempting new tasks, check if they require capabilities beyond your current toolset. If yes, use agent_discovery to find suitable tools rather than declaring the task impossible.
+      <agent_discovery>
+      I am not able to answer this question.
+      </agent_discovery>
     `);
 
     const result = await agent.invoke({ messages: [system, ...messages] });

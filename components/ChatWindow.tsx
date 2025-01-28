@@ -4,16 +4,18 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import { CHAT_CONSTANTS } from "@/constants/chat";
-import { Message } from "ai";
+import { Message as VercelMessage } from "ai";
 import { useChat } from "ai/react";
 import { useRef, useState, ReactElement, useEffect, useMemo } from "react";
-import type { FormEvent } from "react";
 
 import { ChatMessageBubble } from "@/components/ChatMessageBubble";
 import { IntermediateStep } from "./IntermediateStep";
 import { HumanActionStep } from "./HumanAction";
 import { usePersistedConversation } from "@/hooks/persistedState";
 import type { HumanAction } from "@/types/HumanAction";
+import type { ResponseMetadata } from "@/types/Message";
+
+type Message = VercelMessage & { annotations?: ResponseMetadata[] };
 
 function parseHumanAction(message: Message) {
   if (message?.role !== "system") return;
@@ -36,6 +38,25 @@ function transformWithHumanAction(messages: Message[]) {
       humanAction,
     };
   }
+}
+
+function getAssistantResponse(messages: Message[]) {
+  console.log("getAssistantResponse", messages);
+  if (messages.length === 0) return [];
+  let responseMessages: Message[] = [messages[messages.length - 1]];
+  let lastMessageMetadata = messages[messages.length - 1].annotations?.[0];
+
+  // if the last message is a remote response, find the last non-remote message
+  if (lastMessageMetadata?.remote) {
+    const lastNonRemoteMessage = messages.findLast(
+      (message) => !message.annotations?.[0]?.remote,
+    );
+    if (lastNonRemoteMessage) {
+      responseMessages.push(lastNonRemoteMessage);
+    }
+  }
+
+  return responseMessages.reverse();
 }
 
 export function ChatWindow(props: {
@@ -158,6 +179,7 @@ export function ChatWindow(props: {
       const json = await response.json();
 
       const responseMessages: Message[] = json.messages;
+
       // Represent intermediate steps as system messages for display purposes
       // TODO: Add proper support for tool messages
       const toolCallMessages = responseMessages.filter(
@@ -181,9 +203,11 @@ export function ChatWindow(props: {
               action: aiMessage.tool_calls?.[0],
               observation: JSON.parse(toolMessage.content),
             }),
+            annotations: toolMessage.annotations,
           });
         }
       }
+
       const newMessages = messagesWithUserReply;
       for (const message of intermediateStepMessages) {
         newMessages.push(message);
@@ -192,14 +216,12 @@ export function ChatWindow(props: {
           setTimeout(resolve, CHAT_CONSTANTS.INTERMEDIATE_STEP_DELAY),
         );
       }
-      setMessages([
-        ...newMessages,
-        {
-          id: newMessages.length.toString(),
-          content: responseMessages[responseMessages.length - 1].content,
-          role: "assistant",
-        },
-      ]);
+      const assistantResponse = getAssistantResponse(
+        responseMessages as Message[],
+      );
+      console.log("newMessages", newMessages);
+      console.log("assistantResponse", assistantResponse);
+      setMessages([...newMessages, ...assistantResponse]);
     } catch (error) {
       toast(error instanceof Error ? error.message : "An error occurred", {
         theme: "dark",
@@ -213,14 +235,14 @@ export function ChatWindow(props: {
   // transform messages to extract human action if any
   useEffect(() => {
     const { messages: transformedMessages, humanAction } =
-      transformWithHumanAction(messages);
+      transformWithHumanAction(messages as Message[]);
     setMessages(transformedMessages);
     humanAction && setHumanAction(humanAction);
   }, [messages, humanAction, setMessages, setHumanAction]);
 
   // persist messages to local storage
   useEffect(() => {
-    setConversation(messages);
+    setConversation(messages as Message[]);
   }, [messages, setConversation]);
 
   // if the page is loaded and the last message is not from assistant, send the messages to continue.
