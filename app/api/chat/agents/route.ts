@@ -1,45 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Message as VercelChatMessage, StreamingTextResponse } from "ai";
+import { Message as VercelChatMessage } from "ai";
 
-import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatOpenAI } from "@langchain/openai";
 import { didTool } from "@/ai-tools/ai-id";
 import { walletTool } from "@/ai-tools/ai-wallet";
 import { emailTool } from "@/ai-tools/gmail";
 import { shopifyTool } from "@/ai-tools/shopify";
-
+import { createCustomAgentGraph } from "./agent";
 import {
-  AIMessage,
-  BaseMessage,
-  ChatMessage,
-  HumanMessage,
-  SystemMessage,
-} from "@langchain/core/messages";
+  convertVercelMessageToLangChainMessage,
+  convertLangChainMessageToVercelMessage,
+} from "./agent";
 
-const convertVercelMessageToLangChainMessage = (message: VercelChatMessage) => {
-  if (message.role === "user") {
-    return new HumanMessage(message.content);
-  } else if (message.role === "assistant") {
-    return new AIMessage(message.content);
-  } else {
-    return new ChatMessage(message.content, message.role);
-  }
-};
+import { SystemMessage } from "@langchain/core/messages";
 
-const convertLangChainMessageToVercelMessage = (message: BaseMessage) => {
-  if (message._getType() === "human") {
-    return { content: message.content, role: "user" };
-  } else if (message._getType() === "ai") {
-    return {
-      content: message.content,
-      role: "assistant",
-      tool_calls: (message as AIMessage).tool_calls,
-    };
-  } else {
-    return { content: message.content, role: message._getType() };
-  }
-};
-
+const { AGENT_DISCOVERY_ENDPOINT, AGENT_DISCOVERY_ENABLED } = process.env;
 /**
  * This handler initializes and calls an tool calling ReAct agent.
  * See the docs for more information:
@@ -65,37 +40,55 @@ export async function POST(req: NextRequest) {
     // You can remove this or use a different tool instead.
     const tools = [didTool, walletTool, emailTool, shopifyTool];
     const chat = new ChatOpenAI({
-      model: "gpt-3.5-turbo-0125",
+      model: "gpt-4o",
       temperature: 0,
     });
 
     /**
      * Use a prebuilt LangGraph agent.
      */
-    const agent = createReactAgent({
-      llm: chat,
-      tools,
-      // checkpointSaver: new MemorySaver(),
-      // interruptBefore: ["tools"],
-      // Uncomment to customize the agent
-      /**
-       * Modify the stock prompt in the prebuilt agent. See docs
-       * for how to customize your agent:
-       *
-       * https://langchain-ai.github.io/langgraphjs/tutorials/quickstart/
-       */
-      // messageModifier: new SystemMessage(AGENT_SYSTEM_TEMPLATE),
-    });
+    const multiAgentConfig = {
+      enabled: AGENT_DISCOVERY_ENABLED == "true",
+      endpoint: AGENT_DISCOVERY_ENDPOINT,
+    };
+
+    const agent = await createCustomAgentGraph(tools, multiAgentConfig);
 
     /**
      * We could also pick intermediate steps out from `streamEvents` chunks, but
      * they are generated as JSON objects, so streaming and displaying them with
      * the AI SDK is more complicated.
      */
-    const result = await agent.invoke({ messages });
+    const system = new SystemMessage(`
+      You are an AI agent with access to various tools. When you encounter a task requiring capabilities not covered by your current toolset:
+      1. Use the agent_discovery tool to find appropriate tools/services
+      2. Format your request with:
+        - Clear description of required capability
+        - Any constraints (performance, cost, formats)
+        - Relevant context
+
+      Example query:
+      {
+        "capability": "Need to convert speech to text",
+        "constraints": {
+          "maxLatency": 2000,
+          "costPerCall": 0.01
+        },
+        "context": "Processing real-time audio streams"
+      }
+
+      Before attempting new tasks, check if they require capabilities beyond your current toolset. If yes, use agent_discovery to find suitable tools rather than declaring the task impossible.
+    `);
+
+    const result = await agent.invoke({ messages: [system, ...messages] });
+    console.log(result);
+    const responseMessages = result.messages.map(
+      convertLangChainMessageToVercelMessage,
+    );
+    console.log("responseMessages\n\n", responseMessages);
     return NextResponse.json(
       {
-        messages: result.messages.map(convertLangChainMessageToVercelMessage),
+        messages: responseMessages,
       },
       { status: 200 },
     );
