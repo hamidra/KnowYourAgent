@@ -10,7 +10,8 @@ import { ChatOpenAI } from "@langchain/openai";
 import { StateGraph, END, START } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { randomUUID } from "crypto";
-import { ResponseMetadata } from "@/types/Message";
+
+const { DID, NAME } = process.env;
 
 export const convertVercelMessageToLangChainMessage = (
   message: VercelChatMessage,
@@ -123,6 +124,21 @@ export async function createCustomAgentGraph(
     const response = await model.invoke(state.messages);
     return { messages: [response] };
   }
+
+  async function metadataNode(state: AgentState) {
+    state.messages.map((message) => {
+      if (!message.response_metadata.agent) {
+        message.response_metadata.agent = {
+          name: NAME,
+          did: DID,
+          remote: false,
+        };
+      }
+      return message;
+    });
+    return { messages: state.messages };
+  }
+
   // Define the agent discovery node
   async function agentDiscoveryNode(state: AgentState) {
     if (!multiAgentConfig.enabled || !multiAgentConfig.endpoint) {
@@ -183,7 +199,7 @@ export async function createCustomAgentGraph(
     ) {
       return "agent_discovery";
     }
-    return "end";
+    return "metadata";
   }
 
   function shouldContinue(state: AgentState) {
@@ -192,7 +208,7 @@ export async function createCustomAgentGraph(
     if (lastMessage?.tool_calls?.length) {
       return "tools";
     } else {
-      return END;
+      return "metadata";
     }
   }
 
@@ -203,16 +219,18 @@ export async function createCustomAgentGraph(
     .addNode("single_agent", singleAgentNode)
     .addNode("tools", toolNode)
     .addNode("agent_discovery", agentDiscoveryNode)
+    .addNode("metadata", metadataNode)
     // Add edges
     .addEdge(START, "multi_agent")
     .addConditionalEdges("multi_agent", routeInitial, {
       tools: "tools",
       agent_discovery: "agent_discovery",
-      end: END,
+      metadata: "metadata",
     })
     .addEdge("tools", "single_agent")
-    .addEdge("agent_discovery", END)
-    .addConditionalEdges("single_agent", shouldContinue);
+    .addEdge("agent_discovery", "metadata")
+    .addConditionalEdges("single_agent", shouldContinue)
+    .addEdge("metadata", END);
 
   // Compile the graph
   return workflow.compile();

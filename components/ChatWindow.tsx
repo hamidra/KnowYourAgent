@@ -47,9 +47,9 @@ function getAssistantResponse(messages: Message[]) {
   let lastMessageMetadata = messages[messages.length - 1].annotations?.[0];
 
   // if the last message is a remote response, find the last non-remote message
-  if (lastMessageMetadata?.remote) {
+  if (lastMessageMetadata?.agent?.remote) {
     const lastNonRemoteMessage = messages.findLast(
-      (message) => !message.annotations?.[0]?.remote,
+      (message) => !message.annotations?.[0]?.agent?.remote,
     );
     if (lastNonRemoteMessage) {
       responseMessages.push(lastNonRemoteMessage);

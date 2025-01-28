@@ -1,5 +1,3 @@
 export type ResponseMetadata = {
-  remote: boolean;
-  did?: string;
-  name?: string;
+  agent: { remote: boolean; did?: string; name?: string };
 };
