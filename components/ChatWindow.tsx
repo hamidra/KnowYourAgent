@@ -14,6 +14,7 @@ import { HumanActionStep } from "./HumanAction";
 import { usePersistedConversation } from "@/hooks/persistedState";
 import type { HumanAction } from "@/types/HumanAction";
 import type { ResponseMetadata } from "@/types/Message";
+import { MessageExample } from "./MultiChatMessageBubble";
 
 type Message = VercelMessage & { annotations?: ResponseMetadata[] };
 
@@ -221,6 +222,9 @@ export function ChatWindow(props: {
 
       setHumanAction(humanAction);
       setMessages([...newMessages, ...assistantResponse]);
+      console.log("assistantResponse", assistantResponse);
+      console.log("newMessages", newMessages);
+      console.log("humanAction", humanAction);
     } catch (error) {
       toast(error instanceof Error ? error.message : "An error occurred", {
         theme: "dark",
@@ -290,7 +294,8 @@ export function ChatWindow(props: {
             {humanAction && (
               <HumanActionStep humanAction={humanAction}></HumanActionStep>
             )}
-            {memoizedMessageList}
+            {/*memoizedMessageList*/}
+            <MessageExample />
           </div>
         </div>
       </div>
