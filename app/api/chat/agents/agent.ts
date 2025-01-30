@@ -3,26 +3,37 @@ import {
   AIMessage,
   HumanMessage,
   ChatMessage,
+  isSystemMessage,
+  isChatMessage,
 } from "@langchain/core/messages";
-import { Message as VercelChatMessage } from "ai";
+import { Message } from "ai";
 import { ChatOpenAI } from "@langchain/openai";
 
 import { StateGraph, END, START } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { randomUUID } from "crypto";
+import { ResponseMetadata } from "@/types/Message";
 
 const { DID, NAME } = process.env;
+
+type VercelChatMessage = Message & { annotations?: ResponseMetadata[] };
 
 export const convertVercelMessageToLangChainMessage = (
   message: VercelChatMessage,
 ) => {
+  let resultMessage;
   if (message.role === "user") {
-    return new HumanMessage(message.content);
+    resultMessage = new HumanMessage(message.content);
   } else if (message.role === "assistant") {
-    return new AIMessage(message.content);
+    resultMessage = new AIMessage(message.content);
   } else {
-    return new ChatMessage(message.content, message.role);
+    resultMessage = new ChatMessage(message.content, message.role);
   }
+  let response_metadata = message.annotations?.[0] as ResponseMetadata;
+  if (response_metadata) {
+    resultMessage.response_metadata = { ...response_metadata };
+  }
+  return resultMessage;
 };
 
 export const convertLangChainMessageToVercelMessage = (
@@ -42,6 +53,8 @@ export const convertLangChainMessageToVercelMessage = (
       role: "assistant",
       tool_calls: (message as AIMessage).tool_calls,
     };
+  } else if (isChatMessage(message)) {
+    vercelMessage = { content: message.content, role: message.role };
   } else {
     vercelMessage = { content: message.content, role: message._getType() };
   }
@@ -83,7 +96,7 @@ async function callRemoteAgent(
 
     const data = await response.json();
     const remoteAgentResponse: VercelChatMessage[] | undefined = data.messages;
-    if (!remoteAgentResponse || !remoteAgentResponse.length) {
+    if (!remoteAgentResponse?.length) {
       throw new Error(`Remote agent did not respond`);
     }
     return remoteAgentResponse.map(convertVercelMessageToLangChainMessage);
@@ -126,7 +139,7 @@ export async function createCustomAgentGraph(
   }
 
   async function metadataNode(state: AgentState) {
-    state.messages.map((message) => {
+    const messages = state.messages.map((message) => {
       if (!message.response_metadata.agent) {
         message.response_metadata.agent = {
           name: NAME,
@@ -136,7 +149,7 @@ export async function createCustomAgentGraph(
       }
       return message;
     });
-    return { messages: state.messages };
+    return { messages };
   }
 
   // Define the agent discovery node
@@ -176,10 +189,19 @@ export async function createCustomAgentGraph(
     return {
       messages: [
         ...messages,
-        ...response.map((remoteMessage) => {
-          remoteMessage.response_metadata.remote = true;
-          return remoteMessage;
-        }),
+        ...response
+          .filter(
+            (message) =>
+              !isChatMessage(message) || message.role !== "assistant",
+          )
+          .map((remoteMessage) => {
+            const agentMetadata = remoteMessage.response_metadata.agent;
+            remoteMessage.response_metadata.agent = {
+              ...agentMetadata,
+              remote: true,
+            };
+            return remoteMessage;
+          }),
       ],
     };
   }

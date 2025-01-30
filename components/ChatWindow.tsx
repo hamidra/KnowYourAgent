@@ -24,38 +24,28 @@ function parseHumanAction(message: Message) {
 }
 
 function transformWithHumanAction(messages: Message[]) {
-  const lastMessage = messages[messages.length - 1];
-  const secondLastMessage = messages[messages.length - 2];
-  const humanAction = parseHumanAction(secondLastMessage);
-  if (humanAction) {
-    // if the second last message is a system message with a human in the loop action, remove the last assistant message
-    return { messages: messages.slice(0, -2), humanAction };
-  } else {
-    // otherwise try to extract the human action from the last message if it is a human in the loop action
-    const humanAction = parseHumanAction(lastMessage);
-    return {
-      messages: humanAction ? messages.slice(0, -1) : messages,
-      humanAction,
-    };
+  const nonActionMessages = [];
+  let humanAction;
+  for (let i = 0; i < messages.length; i++) {
+    const message = messages[i];
+    humanAction = parseHumanAction(message);
+    if (!humanAction) {
+      nonActionMessages.push(message);
+    }
   }
+  // if there is a human action remove the last message, which is the assistant message
+  if (humanAction) {
+    nonActionMessages.pop();
+  }
+  return {
+    messages: nonActionMessages,
+    humanAction,
+  };
 }
 
 function getAssistantResponse(messages: Message[]) {
-  console.log("getAssistantResponse", messages);
   if (messages.length === 0) return [];
   let responseMessages: Message[] = [messages[messages.length - 1]];
-  let lastMessageMetadata = messages[messages.length - 1].annotations?.[0];
-
-  // if the last message is a remote response, find the last non-remote message
-  if (lastMessageMetadata?.agent?.remote) {
-    const lastNonRemoteMessage = messages.findLast(
-      (message) => !message.annotations?.[0]?.agent?.remote,
-    );
-    if (lastNonRemoteMessage) {
-      responseMessages.push(lastNonRemoteMessage);
-    }
-  }
-
   return responseMessages.reverse();
 }
 
@@ -209,18 +199,27 @@ export function ChatWindow(props: {
       }
 
       const newMessages = messagesWithUserReply;
+
+      // parse human action from intermediate steps
+      let humanAction;
       for (const message of intermediateStepMessages) {
-        newMessages.push(message);
-        setMessages([...newMessages]);
+        humanAction = parseHumanAction(message);
+        if (!humanAction) {
+          newMessages.push(message);
+          setMessages([...newMessages]);
+        }
         await new Promise((resolve) =>
           setTimeout(resolve, CHAT_CONSTANTS.INTERMEDIATE_STEP_DELAY),
         );
       }
-      const assistantResponse = getAssistantResponse(
-        responseMessages as Message[],
-      );
+      const assistantResponse = !humanAction
+        ? getAssistantResponse(responseMessages as Message[])
+        : [];
       console.log("newMessages", newMessages);
       console.log("assistantResponse", assistantResponse);
+      console.log("humanAction", humanAction);
+
+      setHumanAction(humanAction);
       setMessages([...newMessages, ...assistantResponse]);
     } catch (error) {
       toast(error instanceof Error ? error.message : "An error occurred", {
@@ -233,12 +232,14 @@ export function ChatWindow(props: {
   }
 
   // transform messages to extract human action if any
+  /*
   useEffect(() => {
     const { messages: transformedMessages, humanAction } =
       transformWithHumanAction(messages as Message[]);
     setMessages(transformedMessages);
     humanAction && setHumanAction(humanAction);
   }, [messages, humanAction, setMessages, setHumanAction]);
+  */
 
   // persist messages to local storage
   useEffect(() => {

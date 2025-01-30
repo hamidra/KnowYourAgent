@@ -1,7 +1,8 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { ChatWindow } from "@/components/ChatWindow";
-import Authenticated from '@/components/Authenticated';
+import Authenticated from "@/components/Authenticated";
 
 export default function Home() {
   const [isHydrated, setIsHydrated] = useState(false);

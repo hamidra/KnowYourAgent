@@ -14,10 +14,16 @@ import {
 
 import { SystemMessage } from "@langchain/core/messages";
 
-const { AGENT_DISCOVERY_ENDPOINT, AGENT_DISCOVERY_ENABLED } = process.env;
+const { AGENT_DISCOVERY_ENDPOINT, AGENT_DISCOVERY_ENABLED, OPENAI_MODEL } =
+  process.env;
 
 // tools
 const TOOLS = process.env.TOOLS;
+
+console.log("OPENAI_MODEL", OPENAI_MODEL);
+console.log("AGENT_DISCOVERY_ENDPOINT", AGENT_DISCOVERY_ENDPOINT);
+console.log("AGENT_DISCOVERY_ENABLED", AGENT_DISCOVERY_ENABLED);
+console.log("TOOLS", TOOLS);
 
 const toolkit: Record<string, any> = {
   gmail: emailTool,
@@ -46,12 +52,13 @@ export async function POST(req: NextRequest) {
       )
       .map(convertVercelMessageToLangChainMessage);
 
+    console.log("messages", messages);
+
     // Requires process.env.SERPAPI_API_KEY to be set: https://serpapi.com/
     // You can remove this or use a different tool instead.
     const tools = TOOLS?.split(",").map((tool) => toolkit[tool]) || [];
-
     const chat = new ChatOpenAI({
-      model: "gpt-4o",
+      model: OPENAI_MODEL,
       temperature: 0,
     });
 
@@ -70,21 +77,31 @@ export async function POST(req: NextRequest) {
      * they are generated as JSON objects, so streaming and displaying them with
      * the AI SDK is more complicated.
      */
-    const system = new SystemMessage(`
-      You are an AI agent with access to various tools. 
-      You should always respond with the following message when you can not complete a task or answer a question:
+    const systemPrompts = {
+      multiagent: `
+      You are an AI assistant with access to various tools. You must always respond strictly in the required format.
 
+      1- If you cannot complete a task or answer a question, respond exactly with the following message, including the tags, without any modifications or additional text:
+      \`\`\`
       <agent_discovery>
       I am not able to answer this question.
       </agent_discovery>
-    `);
-
+      \`\`\`
+      2- Do not provide explanations, workarounds, or alternative responses.
+      3- Never break formatting rules or modify the required response structure.
+      `,
+      singleagent: `
+      you are a helpful assistant. you can use the provided tools to answer questions and complete tasks.
+      `,
+    };
+    const system = new SystemMessage(
+      systemPrompts[multiAgentConfig.enabled ? "multiagent" : "singleagent"],
+    );
+    console.log("system prompt", system);
     const result = await agent.invoke({ messages: [system, ...messages] });
-    console.log(result);
     const responseMessages = result.messages.map(
       convertLangChainMessageToVercelMessage,
     );
-    console.log("responseMessages\n\n", responseMessages);
     return NextResponse.json(
       {
         messages: responseMessages,
