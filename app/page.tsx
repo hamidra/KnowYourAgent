@@ -35,7 +35,10 @@ export default function Home() {
   return (
     isHydrated && (
       <Authenticated>
-        <main className="flex flex-col items-center justify-between">
+        <main
+          className="flex h-screen flex-col items-center justify-between md:p-24 p-4
+                        bg-neutral-100 text-neutral-800"
+        >
           <ChatWindow
             endpoint="api/chat/agents"
             emptyStateComponent={InfoCard}

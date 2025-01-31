@@ -1,5 +1,6 @@
 import type { Message } from "ai/react";
 import MarkdownBody from "./Markdown";
+import clsx from "clsx";
 
 export function ChatMessageBubble(props: {
   message: Message;
@@ -13,7 +14,12 @@ export function ChatMessageBubble(props: {
   const prefix = props.message.role === "user" ? "🧑" : props.aiEmoji;
   return (
     <div
-      className={`${alignmentClassName} ${colorClassName} rounded-3xl px-4 py-2 max-w-[80%] my-4 flex`}
+      className={clsx(
+        "flex flex-col rounded-lg px-3 py-2 mb-2 max-w-[80%] whitespace-pre-wrap",
+        props.message.role === "assistant"
+          ? "bg-white text-neutral-800 self-start"
+          : "bg-neutral-200 text-neutral-800 self-end",
+      )}
     >
       <div className="mr-2">{prefix}</div>
       <div className="whitespace-pre-wrap flex flex-col">

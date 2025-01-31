@@ -20,10 +20,10 @@ const { AGENT_DISCOVERY_ENDPOINT, AGENT_DISCOVERY_ENABLED, OPENAI_MODEL } =
 // tools
 const TOOLS = process.env.TOOLS;
 
-console.log("OPENAI_MODEL", OPENAI_MODEL);
-console.log("AGENT_DISCOVERY_ENDPOINT", AGENT_DISCOVERY_ENDPOINT);
-console.log("AGENT_DISCOVERY_ENABLED", AGENT_DISCOVERY_ENABLED);
-console.log("TOOLS", TOOLS);
+console.info("OPENAI_MODEL", OPENAI_MODEL);
+console.info("AGENT_DISCOVERY_ENDPOINT", AGENT_DISCOVERY_ENDPOINT);
+console.info("AGENT_DISCOVERY_ENABLED", AGENT_DISCOVERY_ENABLED);
+console.info("TOOLS", TOOLS);
 
 const toolkit: Record<string, any> = {
   gmail: emailTool,
@@ -51,8 +51,6 @@ export async function POST(req: NextRequest) {
           message.role === "user" || message.role === "assistant",
       )
       .map(convertVercelMessageToLangChainMessage);
-
-    console.log("messages", messages);
 
     // Requires process.env.SERPAPI_API_KEY to be set: https://serpapi.com/
     // You can remove this or use a different tool instead.
@@ -97,7 +95,7 @@ export async function POST(req: NextRequest) {
     const system = new SystemMessage(
       systemPrompts[multiAgentConfig.enabled ? "multiagent" : "singleagent"],
     );
-    console.log("system prompt", system);
+
     const result = await agent.invoke({ messages: [system, ...messages] });
     const responseMessages = result.messages.map(
       convertLangChainMessageToVercelMessage,

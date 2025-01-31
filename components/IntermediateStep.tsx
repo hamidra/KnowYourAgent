@@ -6,6 +6,7 @@ export function IntermediateStep(props: { message: Message }) {
   const action = parsedInput.action;
   const observation = JSON.stringify(parsedInput.observation);
   const [expanded, setExpanded] = useState(false);
+  if (!action) return;
   return (
     <div
       className={`ml-auto bg-green-600 rounded px-4 py-2 max-w-[80%] mb-8 whitespace-pre-wrap flex flex-col cursor-pointer`}

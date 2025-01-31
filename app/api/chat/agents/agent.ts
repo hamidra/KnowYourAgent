@@ -12,7 +12,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { StateGraph, END, START } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { randomUUID } from "crypto";
-import { ResponseMetadata } from "@/types/Message";
+import { ResponseMetadata } from "@/types";
 
 const { DID, NAME } = process.env;
 
