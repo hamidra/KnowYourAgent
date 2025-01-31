@@ -6,6 +6,7 @@
     "dev": "NODE_OPTIONS='--inspect' next dev",
     "build": "next build",
     "start": "next start",
+    "start:agent2": "next start -p 3001",
     "lint": "next lint",
     "format": "prettier --write ./"
   },
