@@ -1,15 +1,25 @@
 "use client";
 import { usePrivy } from "@privy-io/react-auth";
-
+import Image from "next/image";
+import logo from "@/public/images/logo.png";
+import { usePersistedConversation } from "@/hooks/persistedState";
 const Header = () => {
   const { login, authenticated, logout, user } = usePrivy();
   const email = user?.email?.address;
   const address = user?.wallet?.address;
+  const { clearConversation } = usePersistedConversation(
+    `conv-${address}` || "guest",
+  );
 
   return (
     <header className="w-full p-4 bg-white shadow-md">
       <div className="container mx-auto flex justify-between items-stretch">
-        <h1 className="text-xl font-bold flex items-center">AI Chat</h1>
+        <div className="flex items-center" onClick={() => clearConversation()}>
+          <Image src={logo} alt="Brand Logo" className="w-auto h-14" />
+          <div className="flex items-center gap-4 font-semibold text-xl">
+            Know Your Agent
+          </div>
+        </div>
         {authenticated ? (
           <div className="flex items-stretch gap-4">
             <div className="flex items-stretch gap-4">

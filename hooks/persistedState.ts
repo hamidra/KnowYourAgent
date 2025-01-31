@@ -29,7 +29,7 @@ export function usePersistedConversation<T>(key: string) {
 
   const clearConversation = useCallback(() => {
     try {
-      localStorage?.clear();
+      localStorage?.removeItem(key);
     } catch (error) {
       console.error(`Error clearing state for key "${key}":`, error);
     }

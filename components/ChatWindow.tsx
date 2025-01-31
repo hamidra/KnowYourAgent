@@ -7,12 +7,11 @@ import { CHAT_CONSTANTS } from "@/constants/chat";
 import { Message as VercelMessage } from "ai";
 import { useChat } from "ai/react";
 import { useRef, useState, ReactElement, useEffect, useMemo } from "react";
+import { usePrivy } from "@privy-io/react-auth";
 
-import { ChatMessageBubble } from "@/components/ChatMessageBubble";
 import { IntermediateStep } from "./IntermediateStep";
 import { HumanActionStep } from "./HumanAction";
 import { usePersistedConversation } from "@/hooks/persistedState";
-import type { HumanAction } from "@/types/HumanAction";
 import type { ResponseMetadata } from "@/types";
 import { MultiMessageBubble } from "./MultiMessageBubble";
 import { HumanActionWithOrigin } from "@/types";
@@ -43,6 +42,8 @@ export function ChatWindow(props: {
   showIntermediateStepsToggle?: boolean;
 }) {
   const messageContainerRef = useRef<HTMLDivElement | null>(null);
+  const { user } = usePrivy();
+  const address = user?.wallet?.address;
 
   const {
     endpoint,
@@ -65,7 +66,7 @@ export function ChatWindow(props: {
   >({});
 
   const { getConversation, setConversation, clearConversation } =
-    usePersistedConversation<Message>("conversation");
+    usePersistedConversation<Message>(`conv-${address}` || "guest");
 
   const {
     messages,
@@ -285,7 +286,7 @@ export function ChatWindow(props: {
             value={input}
             onChange={handleInputChange}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && e.shiftKey) {
+              if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 input && sendMessage();
               }
