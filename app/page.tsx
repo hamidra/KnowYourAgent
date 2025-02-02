@@ -18,16 +18,18 @@ export default function Home() {
         This agent has been verified and the owner has issued a verifiable
         credential so the Agent can accomplish tasks on their behalf.
         <br />
-        It is also equipped with a wallet with some balance that they can use
-        for online payments in case they need a payment for a task.
+        It is also equipped with some tool set that can perform some tasks
+        online, including a gmail tool for checking your latest emails on gmail,
+        and an agent discovery tool that let it coordinate tasks with other
+        agents in it's network.
         <br />
         <br />
-        Try to ask it about it&apos;s identity or their account balance. e.g.
-        ask them.
+        Try to ask it about it to coordinate some tasks. e.g. ask them.
         <br />
-        &gt; Who you are?! Provide me a proof of your Identity?
+        &gt; Can you check my latest emails on my gmail?
         <br />
-        &gt; What is your current balance?!
+        &gt; Can you get a list of my top products from my shopify store? Store
+        name is: tesser-test
       </p>
     </div>
   );
@@ -42,9 +44,8 @@ export default function Home() {
           <ChatWindow
             endpoint="api/chat/agents"
             emptyStateComponent={InfoCard}
-            placeholder="Hi! Ask me about myself, my identity, how much money I have! Ask me about anything!"
+            placeholder="Hi! Ask me anything!"
             titleText="Know Your Agent."
-            emoji="🤖"
             showIntermediateStepsToggle={true}
           ></ChatWindow>
         </main>

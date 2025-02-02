@@ -38,7 +38,6 @@ export function ChatWindow(props: {
   emptyStateComponent: ReactElement;
   placeholder?: string;
   titleText?: string;
-  emoji?: string;
   showIntermediateStepsToggle?: boolean;
 }) {
   const messageContainerRef = useRef<HTMLDivElement | null>(null);
@@ -51,7 +50,6 @@ export function ChatWindow(props: {
     placeholder,
     titleText = CHAT_CONSTANTS.DEFAULT_TITLE,
     showIntermediateStepsToggle,
-    emoji,
   } = props;
 
   const [showIntermediateSteps, setShowIntermediateSteps] = useState(false);
