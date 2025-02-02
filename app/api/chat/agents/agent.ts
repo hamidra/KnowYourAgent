@@ -14,7 +14,7 @@ import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { randomUUID } from "crypto";
 import { ResponseMetadata } from "@/types";
 
-const { DID, NAME } = process.env;
+const { DID, NAME, OPENAI_MODEL } = process.env;
 
 type VercelChatMessage = Message & { annotations?: ResponseMetadata[] };
 
@@ -111,6 +111,7 @@ async function callRemoteAgent(
   }
 }
 export async function createCustomAgentGraph(
+  modelName: string,
   tools: any[],
   multiAgentConfig: {
     enabled: boolean;
@@ -121,7 +122,7 @@ export async function createCustomAgentGraph(
 ) {
   // Initialize the model and bind tools
   const model = new ChatOpenAI({
-    modelName: "gpt-4-turbo-preview",
+    modelName: modelName,
     temperature: 0,
   }).bindTools(tools);
 
