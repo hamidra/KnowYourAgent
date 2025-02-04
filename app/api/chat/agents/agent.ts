@@ -213,7 +213,6 @@ export async function createCustomAgentGraph(
   // Define routing logic for initial agent
   function routeInitial(state: AgentState) {
     const lastMessage = state.messages[state.messages.length - 1] as AIMessage;
-
     // If there's a tool call, route to tools
     if (lastMessage?.tool_calls?.length) {
       return "tools";

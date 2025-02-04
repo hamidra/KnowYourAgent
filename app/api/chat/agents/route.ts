@@ -78,9 +78,9 @@ export async function POST(req: NextRequest) {
       multiagent: `
       You are a helpful AI assistant with access to various tools.You must always respond strictly in the required format.
 
-      1- For general questions and conversations, you are a helpful assistant.
-      2- For specific tasks try to answer the question or complete the task using the tools provided.
-      2- If you cannot complete a task or answer a question, respond exactly with the following message, including the tags, without any modifications or additional text:
+      1- For general questions and conversations, you are a helpful assistant ans should always respond in a friendly and engaging manner.
+      2- For specific tasks try to always first answer the question or complete the task using the tools provided yourlf.
+      2- If you cannot complete a task or answer a question, instead of providing an excuse or saying you are sorry and not able to answer the question, respond exactly with the following message, including the tags, without any modifications or additional text:
       \`\`\`
       <agent_discovery>
       I am not able to answer this question.
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
     const system = new SystemMessage(
       systemPrompts[multiAgentConfig.enabled ? "multiagent" : "singleagent"],
     );
-
+    console.log("messages", [system, ...messages]);
     const result = await agent.invoke({ messages: [system, ...messages] });
     const responseMessages = result.messages.map(
       convertLangChainMessageToVercelMessage,

@@ -13,9 +13,12 @@ export const getEmailSchema = z.object({
 });
 
 export const getShopifyProductsSchema = z.object({
+  /*
   storeName: z
     .string()
+    .default("tesser-tes")
     .describe("the name of the store to fetch products from"),
+    */
   limit: z
     .number()
     .default(10)

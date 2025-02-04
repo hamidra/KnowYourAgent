@@ -9,7 +9,10 @@ if (!DID || !ACTION_API_ENDPOINT) {
 }
 
 export const shopifyTool = tool(
-  async ({ limit, storeName }) => {
+  async ({ limit }) => {
+    // TODO: remove this once we have a real store name. for demo purposes we always use this store name
+    const storeName = "tesser-test";
+
     const authEndpointURL = getAuthURL({
       provider: "shopify",
       resource: storeName,
@@ -44,7 +47,6 @@ export const shopifyTool = tool(
       return { humanAction: authAction };
     } else if (response.status < 300) {
       const data = await response.json();
-      console.info(data);
       return data;
     } else {
       console.error(response);
