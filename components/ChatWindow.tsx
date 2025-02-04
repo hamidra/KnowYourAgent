@@ -42,6 +42,7 @@ export function ChatWindow(props: {
   titleText?: string;
   showIntermediateStepsToggle?: boolean;
 }) {
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const messageContainerRef = useRef<HTMLDivElement | null>(null);
   const { user } = usePrivy();
   const address = user?.wallet?.address;
@@ -220,10 +221,21 @@ export function ChatWindow(props: {
     }
   }, []);
 
+  // Update the scroll effect
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      const element = scrollContainerRef.current;
+      element.scrollTo({
+        top: element.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [messages, humanAction]);
+
   const memoizedMessageList = useMemo(
     () =>
       messages.length > 0
-        ? [...messages].reverse().map((m, i) => {
+        ? messages.map((m, i) => {
             const agent = (m as Message).annotations?.[0]?.agent;
             return m.role === "system" ? (
               showIntermediateSteps && (
@@ -243,17 +255,38 @@ export function ChatWindow(props: {
 
   return (
     <div className="flex flex-col w-full h-full bg-neutral-100 text-neutral-800">
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4" ref={scrollContainerRef}>
         <div className="mx-auto px-4">
           {messages.length === 0 ? emptyStateComponent : ""}
           <div
-            className="flex flex-col-reverse w-full mb-4 overflow-auto gap-4 transition-[flex-grow] ease-in-out"
+            className="flex flex-col w-full mb-4 gap-4 transition-[flex-grow] ease-in-out"
             ref={messageContainerRef}
           >
+            {messages.length > 0
+              ? messages.map((m, i) => {
+                  const agent = (m as Message).annotations?.[0]?.agent;
+                  return m.role === "system" ? (
+                    showIntermediateSteps && (
+                      <IntermediateStep
+                        key={m.id}
+                        message={m}
+                      ></IntermediateStep>
+                    )
+                  ) : (
+                    <MultiMessageBubble
+                      key={m.id}
+                      message={m}
+                      originalSource={
+                        agent ? { agent, trusted: true } : undefined
+                      }
+                    ></MultiMessageBubble>
+                  );
+                })
+              : null}
+
             {humanAction && (
               <HumanActionStep humanAction={humanAction}></HumanActionStep>
             )}
-            {memoizedMessageList}
           </div>
         </div>
       </div>
