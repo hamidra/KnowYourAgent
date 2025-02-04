@@ -1,5 +1,6 @@
 import type { HumanActionWithOrigin } from "@/types";
 import { OriginalSourceBox } from "./OriginalSourceBox";
+import Image from "next/image";
 
 export function HumanActionStep(props: { humanAction: HumanActionWithOrigin }) {
   const { humanAction } = props;
@@ -12,6 +13,7 @@ export function HumanActionStep(props: { humanAction: HumanActionWithOrigin }) {
         <OriginalSourceBox source={{ agent: from, trusted: true }} />
       )}
       <div className="flex flex-row gap-3 items-center justify-center w-full h-full">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         {logo && <img src={logo} alt={name} className="w-16 h-16" />}
         <div className="flex flex-col items-center justify-center w-full h-full">
           <h1 className="text-2xl">{title}</h1>

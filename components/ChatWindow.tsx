@@ -213,6 +213,7 @@ export function ChatWindow(props: {
   }, [messages, setConversation]);
 
   // if the page is loaded and the last message is not from assistant, send the messages to continue.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (messages.length > 0 && messages.slice(-1)[0].role != "assistant") {
       sendMessage();
@@ -237,7 +238,7 @@ export function ChatWindow(props: {
             );
           })
         : null,
-    [messages, showIntermediateSteps, sourcesForMessages],
+    [messages, showIntermediateSteps],
   );
 
   return (

@@ -21,7 +21,7 @@ export default function Home() {
         It is also equipped with some tool set that can perform some tasks
         online, including a gmail tool for checking your latest emails on gmail,
         and an agent discovery tool that let it coordinate tasks with other
-        agents in it's network.
+        agents in it&apos;s network.
         <br />
         <br />
         Try to ask it about it to coordinate some tasks. e.g. ask them.
