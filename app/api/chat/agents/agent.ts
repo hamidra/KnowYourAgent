@@ -14,7 +14,8 @@ import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { randomUUID } from "crypto";
 import { ResponseMetadata } from "@/types";
 
-const { DID, NAME, OPENAI_MODEL } = process.env;
+const { DID, NAME } = process.env;
+const AGENT_CONTEXT_WINDOW = Number(process.env.AGENT_CONTEXT_WINDOW) || 3;
 
 type VercelChatMessage = Message & { annotations?: ResponseMetadata[] };
 
@@ -78,10 +79,10 @@ const graphState = {
 // Add this function before createCustomAgentGraph
 async function callRemoteAgent(
   remoteAgentEndpoint: string,
-  humanMessage: BaseMessage,
+  humanMessages: BaseMessage[],
 ) {
   try {
-    const messages = [convertLangChainMessageToVercelMessage(humanMessage)];
+    const messages = humanMessages.map(convertLangChainMessageToVercelMessage);
     const response = await fetch(remoteAgentEndpoint, {
       method: "POST",
       headers: {
@@ -169,7 +170,9 @@ export async function createCustomAgentGraph(
     const messages = [...state.messages];
 
     // Get the original user prompt from the messages
-    const userMessage = messages.findLast((msg) => msg._getType() === "human");
+    const userMessage = messages
+      .filter((msg) => msg._getType() === "human")
+      .slice(-AGENT_CONTEXT_WINDOW);
     if (!userMessage) {
       return {
         messages: [

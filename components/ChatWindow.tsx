@@ -18,6 +18,8 @@ import { HumanActionWithOrigin } from "@/types";
 
 type Message = VercelMessage & { annotations?: ResponseMetadata[] };
 
+const CONTEXT_WINDOW = Number(process.env.NEXT_PUBLIC_CONTEXT_WINDOW) || 3;
+
 function parseHumanAction(message: Message): HumanActionWithOrigin | undefined {
   if (message?.role !== "system") return;
   const content = JSON.parse(message.content);
@@ -130,7 +132,9 @@ export function ChatWindow(props: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          messages: messagesWithUserReply,
+          messages: messagesWithUserReply
+            .filter((message) => ["user", "assistant"].includes(message.role))
+            .slice(-CONTEXT_WINDOW),
           show_intermediate_steps: true,
         }),
       });
