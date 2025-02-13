@@ -1,7 +1,7 @@
 import "./globals.css";
 import { Public_Sans } from "next/font/google";
 
-import { PrivyProvider } from '../providers/PrivyProvider';
+import { PrivyProvider } from "../providers/PrivyProvider";
 import Header from "@/components/Header";
 
 const publicSans = Public_Sans({ subsets: ["latin"] });
@@ -30,7 +30,7 @@ export default function RootLayout({
         <meta name="twitter:title" content="Know Your Agent Playground" />
         <meta
           name="twitter:description"
-          content="Starter template showing how to use LangChain in Next.js projects. See source code and deploy your own at https://github.com/langchain-ai/langchain-nextjs-template!"
+          content="Proof of concept playground showing how to interact with a KYA'd AI Agent "
         />
         <meta name="twitter:image" content="/images/og-image.png" />
       </head>
@@ -38,9 +38,7 @@ export default function RootLayout({
         <PrivyProvider>
           <div className="flex flex-col min-h-[100vh]">
             <Header />
-            <div className="flex-1 flex-col relative">
-              {children}
-            </div>
+            <div className="flex-1 flex-col relative">{children}</div>
           </div>
         </PrivyProvider>
       </body>
